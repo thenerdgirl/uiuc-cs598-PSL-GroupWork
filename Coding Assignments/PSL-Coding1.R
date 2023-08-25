@@ -4,7 +4,7 @@
 # nbhagat3, msmille3, jemay3
 
 # Set Seed
-set.seed(3886) #235
+set.seed(235)
 
 ### Part 1: Generate Data ###
 
