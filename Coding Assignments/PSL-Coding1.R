@@ -4,7 +4,7 @@
 # nbhagat3, msmille3, jemay3
 
 # Set Seed
-set.seed(235)
+set.seed(3886) #235
 
 ### Part 1: Generate Data ###
 
@@ -146,4 +146,90 @@ table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=5)
 table(Ytest, implementation_test.pred)
 
+### Part 3: cvkNN ###
 
+### Using this as reference? https://medium.com/@aspengulley/write-an-r-function-to-implement-k-fold-cross-validation-ff9d92e97ce3 ###
+
+# 1. Implement KNN classification with K chosen by 10-fold cross-validation from
+#   scratch. Set the candidate K values from 1 to 180. (The maximum candidate K
+#   value is 180. Why?) From now on, you are allowed to use the built-in kNN
+#   function from R or Python instead of your own implementation from Part 2.
+#   It is possible that multiple K values give the (same) smallest CV error;
+#   when this happens, pick the largest K value among them, since the larger the
+#   K value, the simpler the model.
+
+cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
+  # set a vector cv.err to store the CV error for each k. 
+  cv.err = rep(0,maxk);
+  
+  # set a vector for k values
+  kvalues = seq(1, maxk, 1)
+  
+  # Set variables
+  n = nrow(traindata)
+  foldSize = floor(n/nfolds)
+  
+  for(k in 1:maxk) {
+    # cumulative error for averaging out at the end
+    error = 0
+    
+    for(fold in 1:nfolds) {
+      # Sample the data
+      data_sample = # TODO ??? something like ith.fold in the example code from campuswire #3?
+        
+      # Set the knn function variables
+      temp_train = train[-data_sample,]
+      temp_train_truth = truth[-data_sample]
+      temp_test = train[data_sample,]
+      temp_test_truth = truth[data_sample]
+      
+      # Make prediction
+      temp_predict = knn(temp_train, temp_test, temp_train_truth, k=k)
+      
+      # Sum the error
+      error = error + sum(temp_predict != temp_test_truth)
+    }
+    
+    # Set the error in the array
+    cv.err[k] = error/n
+  }
+  
+  # Return the best k and associated error here
+  # TODO remember to add a tiebreaker for if there are 2 best k's...we want the big one
+  
+}
+
+# 2. Test your code with the training/test data you just generated. Report your
+#   results (on the test data) as a 2-by-2 table and also report the value of
+#   the selected K.
+
+# TODO I think this is the function call we can use to test if this works
+cvkNN(traindata, Ytrain)
+
+# This is the code from Campuswire #3...I am truly unsure if it works
+# myk = seq(1,180,1)
+# cv.err=rep(0,m);
+# 
+# id=sample(1:(2*n),(2*n), replace=FALSE);
+# fold=c(0,  40,  80, 120, 160, 200)
+# for(i in 1:5)
+#   for(j in 1:m){
+#     
+#     ## ith.fold = rows which are in the i-th fold
+#     ith.fold = id[(fold[i]+1):fold[i+1]];   
+#     tmp=knn(traindata[-ith.fold,], traindata[ith.fold,], Ytrain[-ith.fold], k=myk[j]);
+#     cv.err[j]=cv.err[j]+sum(tmp != Ytrain[ith.fold])
+#   }
+# 
+# ## find the best k value based 5-fold CV
+# k.star=myk[order(cv.err)[1]]
+# k.star
+# 
+# ## Error of KNN where K is chosen by 5-fold CV
+# Ytrain.pred = knn(traindata, traindata, Ytrain, k=k.star)
+# train.err.knn.CV= sum(Ytrain != Ytrain.pred)/(2*n)
+# Ytest.pred = knn(traindata, testdata, Ytrain,k=k.star)
+# test.err.knn.CV = sum(Ytest != Ytest.pred)/(2*N) 
+# 
+# train.err.knn.CV
+# test.err.knn.CV
