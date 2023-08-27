@@ -31,7 +31,8 @@ id1 = sample(1:csize, n, replace=TRUE)
 id0 = sample(1:csize, n, replace=TRUE)  
 traindata = matrix(rnorm(2*n*p), 2*n, p)*s + rbind(m1[id1,], m0[id0,])
 dim(traindata)
-Ytrain = factor(c(rep(1,n), rep(0,n)))
+#Ytrain = factor(c(rep(1,n), rep(0,n)))
+Ytrain = rep(c(1, 0), each = n)
 
 # Test sample of size 10,000
 
@@ -42,7 +43,8 @@ id1 = sample(1:csize, N, replace=TRUE)
 id0 = sample(1:csize, N, replace=TRUE)  
 testdata = matrix(rnorm(2*N*p), 2*N, p)*s + rbind(m1[id1,], m0[id0,])
 dim(testdata)
-Ytest = factor(c(rep(1,N), rep(0,N)))
+#Ytest = factor(c(rep(1,N), rep(0,N)))
+Ytest = rep(c(1, 0), each = N)
 
 # 3. Produce a scatter plot of the training data:
 # a. assign different colors to the two classes of data points;
