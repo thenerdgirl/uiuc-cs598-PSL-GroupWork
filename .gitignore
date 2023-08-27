@@ -1,0 +1,10 @@
+# R specific
+.Rhistory
+.RData
+.Rproj.user/
+
+# ignore generated files 
+assignments/**/*.html
+assignments/**/*.pdf
+assignments/**/*.tex
+
