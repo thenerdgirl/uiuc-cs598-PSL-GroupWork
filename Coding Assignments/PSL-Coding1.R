@@ -84,30 +84,42 @@ euclidean_distance = function(point1, point2) {
   }
 }
 
+
 knn_from_scratch = function(train, test, truth, k) {
-  # Make the return vector
-  predictions = rep(0, length(test[, 1]))
-
-  # Distance calculations for each point
-  # TODO vectorize this?
-  for(i in 1:length(test[, 1])) {
-    distances = apply(train, 1, euclidean_distance, test[i,])
-
-    # Get nearest neighbors
-    neighbors = which(distances %in% sort(distances)[1:k])
-
-    # Get votes for the nearest neighbors from truth data
-    votes = table(truth[neighbors])
-
-    # Assign predictions
-    if(votes[[1]] > votes[[2]]) {
-      predictions[i] = 0
-    } else if(votes[[1]] < votes[[2]]) {
-      predictions[i] = 1
+  neighbor_distances = outer(1:nrow(test), 1:nrow(train), Vectorize(function(i, j) euclidean_distance(test[i,], train[j,])))
+  # Calculate each point's distance to neighbors
+  
+  nearest_neighbor_address = function(vector, j){
+    order(vector)[1:j]
+  }
+  # Function to get k nearest neighbors (temp variable j for k)
+  
+  nearest_neighbor_address = t(apply(neighbor_distances, 1, nearest_neighbor_address, j = k))
+  # Apply function to get k nearest neighbors for each point in a vectorized manner
+  # nearest_neighbor_address
+  
+  get_vote = function(indices, vote){
+    vote[indices]
+  }
+  # Function to collect votes for each point's k nearest neighbors
+  
+  neighborhood_votes = t(apply(nearest_neighbor_address, 1, get_vote, vote = truth))
+  # Apply function for each point to collect votes for each point's 
+  # k nearest neighbors in a vectorized manner
+  # neighborhood_votes
+  
+  determine_winner = function(point){
+    if (sum(point) > k/2) {
+      return(1)
+    } else if (sum(point) < k/2) {
+      return(0)
     } else {
-      predictions[i] = sample(0:1, 1)
+      return(sample(0:1, 1))
     }
   }
+  # Determine winner given votes of k nearest neighbors. Ties are broken randomly.
+  
+  predictions = apply(neighborhood_votes, 1, determine_winner)
   return(predictions)
 }
 
@@ -131,8 +143,6 @@ baseline_test.pred = knn(traindata, testdata, Ytrain, k=1)
 table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=1)
 table(Ytest, implementation_test.pred)
-myknn_test.pred = myknn(traindata, testdata, Ytrain, k=1)
-table(Ytest, myknn_test.pred)
 
 # k = 3
 baseline_test.pred = knn(traindata, testdata, Ytrain, k=3)
