@@ -13,8 +13,9 @@ output:
 urlcolor: cyan
 ---
 
-# Work Breakdown
-
+# Assignment Data
+Program: MCS-DS  
+Team contributions:  
 | Person         | Contribution |
 |----------      |----------|
 | Naomi Bhagat   | asdf |
@@ -31,7 +32,7 @@ set.seed(235)
 # import necessary libraries
 library(class)
 
-csize = 10       
+csize = 10
 p = 2        
 s = sqrt(1/5)                         
 m1 = matrix(rnorm(csize*p), csize, p)*s + cbind( rep(1,csize), rep(0,csize) )
@@ -270,7 +271,7 @@ bayes_rule = function(x, s, m1, m0) {
     
     # calculate numerator and denominator portions for each center
     numerator = numerator + exp(-m1_norm^2 / (2 * s^2))
-    denominator = denominator + exp(-m0_norm^2 / (2*s^2))
+    denominator = denominator + exp(-m0_norm^2 / (2 * s^2))
   }
   
   # return 1 if numerator is bigger else 0
@@ -296,7 +297,6 @@ Given the 20 centers generated in Part 1, repeatedly generate 50 training/test d
 Present the test errors graphically, e.g., using a boxplot or strip chart (see below). Also, report the (min, max, median, 25% quantile, 75% quantile) for the 50 selected K values.
 
 ```{r part5, eval = TRUE}
-
 # parameters for the simulation
 n_sims = 50
 n_train = 200
