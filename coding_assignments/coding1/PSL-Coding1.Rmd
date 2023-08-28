@@ -237,7 +237,7 @@ Implement the Bayes rule. Your implementation should meet the following requirem
 -Do not use explicit loops over the test sample size (10,000 or 5,000).
 -You are allowed to use loops over the number of centers (10 or 20), although you can avoid all loops.
 
-```{r part3-2, eval = TRUE}
+```{r part4-1, eval = TRUE}
 # now train model using our preferred k
 bayes_rule = function(x, s, m1, m0) {
   # x = x values 
@@ -248,20 +248,20 @@ bayes_rule = function(x, s, m1, m0) {
   # from assignment 1 (campuswire #36)
   
   # initialize variables for loop
-  cluster_count = nrow(m1)
+  center_count = nrow(m1)
   numerator = rep(0, nrow(x))
   denominator  = rep(0, nrow(x))
   
-  # iterate through clusters, and sum for each
-  for(cluster in cluster_count){
-    current_m1 = m1[cluster, ]
-    current_m0 = m0[cluster, ]
+  # iterate through centers, and sum for each
+  for(center in center_count){
+    current_m1 = m1[center, ]
+    current_m0 = m0[center, ]
     
     # get norm of each row
     m1_norm = apply(x - current_m1, 1, function(row) sqrt(sum(row^2)))
     m0_norm = apply(x - current_m0, 1, function(row) sqrt(sum(row^2)))
     
-    # calculate numerator and denominator portions for each cluster
+    # calculate numerator and denominator portions for each center
     numerator = numerator + exp(-m1_norm^2 / (2 * s^2))
     denominator = denominator + exp(-m0_norm^2 / (2*s^2))
   }
@@ -272,10 +272,9 @@ bayes_rule = function(x, s, m1, m0) {
 ```
 
 2. Test your code with the test data you just generated. (Note that you do not need training data for the Bayes rule.) Report your results (on the test data) as a 2-by-2 table.
-```{r part3-2, eval = TRUE}
+```{r part4-2, eval = TRUE}
 # get prediction, output to table 
 predicted = bayes_rule(testdata, s, m1, m0)
 actual = Ytest
 print(table(actual, predicted))
-
 ```
