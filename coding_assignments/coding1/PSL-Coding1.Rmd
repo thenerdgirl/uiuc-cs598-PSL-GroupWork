@@ -176,49 +176,57 @@ Implement KNN classification with K chosen by 10-fold cross-validation from scra
 We choose 180 as the max K value because there will be 180 samples in our training dataset 
 
 ```{r part3-1, eval = TRUE}
-
-# init variables for looping through k values
-max_k = 180
-fold_count = 10
-k_values = 1:max_k
-average_errors = rep(0, max_k)
-fold_size = floor(nrow(traindata) / fold_count)
-random_idx = sample(1:nrow(traindata))
-
-# loop through values of k, for each, calculate n-fold cv error
-for (k in k_values){
-  # cumulative error for averaging out at the end
-    error = 0
-    
-  for (fold in 1:fold_count){
-    # calculate the index for train/validate for this fold 
-    # do this by getting ordered idx (e.g. 1:10), then using that to get rand idx
-    ordered_val_idx = ((fold - 1) * fold_size + 1) : (fold * fold_size)
-    val_idx = random_idx[ordered_val_idx]
-    
-    # split data into train/val. Use negative index to exclude ones we don't want
-    fold_train_x = traindata[-val_idx, ]
-    fold_train_y = Ytrain[-val_idx]
-    fold_val_x = traindata[val_idx, ]
-    fold_val_y = Ytrain[val_idx]
-    
-    # Make prediction
-    fold_predicted_y = knn(fold_train_x, fold_val_x, fold_train_y, k=k)
+get_best_k = function(x, y) {
+  
+  # init variables for looping through k values
+  max_k = 180
+  fold_count = 10
+  k_values = 1:max_k
+  average_errors = rep(0, max_k)
+  fold_size = floor(nrow(x) / fold_count)
+  random_idx = sample(1:nrow(x))
+  
+  # loop through values of k, for each, calculate n-fold cv error
+  for (k in k_values){
+    # cumulative error for averaging out at the end
+      error = 0
       
-    # Sum the error
-    error = error + sum(fold_predicted_y != fold_val_y)
+    for (fold in 1:fold_count){
+      # calculate the index for train/validate for this fold 
+      # do this by getting ordered idx (e.g. 1:10), then using that to get rand idx
+      ordered_val_idx = ((fold - 1) * fold_size + 1) : (fold * fold_size)
+      val_idx = random_idx[ordered_val_idx]
+      
+      # split data into train/val. Use negative index to exclude ones we don't want
+      fold_train_x = x[-val_idx, ]
+      fold_train_y = y[-val_idx]
+      fold_val_x = x[val_idx, ]
+      fold_val_y = y[val_idx]
+      
+      # Make prediction
+      fold_predicted_y = knn(fold_train_x, fold_val_x, fold_train_y, k=k)
+        
+      # Sum the error
+      error = error + sum(fold_predicted_y != fold_val_y)
+    }
+      
+    # Add error to array to track
+    average_errors[k] = error / fold_count
   }
-    
-  # Add error to array to track
-  average_errors[k] = error / fold_count
+  
+  # uncomment to debug
+  # plot(average_errors, xlab="k", ylab="Average error count", main="Error vs K")
+  
+  # Find lowest error (larger k breaks tie) which.max returns first, so reversing
+  # array will get us last
+  min_idx = length(average_errors) - which.min(rev(average_errors)) + 1
+  min_error = average_errors[min_idx]
+  best_k = k_values[min_idx]
+
+return(best_k)
 }
 
-# Find lowest error (larger k breaks tie) which.max returns first, so reversing
-# array will get us last
-plot(average_errors, xlab="k", ylab="Average error count", main="Error vs K")
-min_idx = length(average_errors) - which.min(rev(average_errors)) + 1
-min_error = average_errors[min_idx]
-best_k = k_values[min_idx]
+best_k = get_best_k(traindata, Ytrain)
 ```
 
 ## Part 3-2
@@ -230,7 +238,7 @@ actual = Ytest
 print(table(actual, predicted))
 ```
 
-The optimal value of k is `r best_k` and it results in an average validation error of `r  min_error`.
+The optimal value of k is `r best_k`.
 
 # Part 4: Bayes rule
 Implement the Bayes rule. Your implementation should meet the following requirements:
@@ -278,3 +286,57 @@ predicted = bayes_rule(testdata, s, m1, m0)
 actual = Ytest
 print(table(actual, predicted))
 ```
+
+# Part 5: Simluation Study
+Given the 20 centers generated in Part 1, repeatedly generate 50 training/test datasets (training size = 200 and test size = 10,000). For each pair of training/test datasets, calculate the test errors (the averaged 0/1 loss on the test data set) for each of the following three procedures:
+
+1. kNN with K = 7 (you can use the built-in kNN function from R or Python);
+2. kNN with K chosen by 10-fold CV (your implementation from Part 3); and
+3. the Bayes rule (your implementation from Part 4).
+
+```{r part5, eval = TRUE}
+
+# parameters for the simulation
+n_sims = 50
+n_train = 200
+n_test = 10000
+
+# arrays to hold datasets
+train_x = matrix(0, nrow=n_train, ncol=2)
+train_y = rep(0, n_train)
+test_x = matrix(0, nrow=n_train, ncol=2)
+test_y = rep(0, n_test)
+
+# dataframe to hold results
+out_df = data.frame(matrix(nrow=0, ))
+
+n = 100
+id1 = sample(1:csize, n, replace=TRUE)
+id0 = sample(1:csize, n, replace=TRUE)  
+traindata = matrix(rnorm(2*n*p), 2*n, p)*s + rbind(m1[id1,], m0[id0,])
+dim(traindata)
+Ytrain = rep(c(1, 0), each = n)
+
+# Test sample of size 10,000
+
+N = 5000
+# Allocate the n samples for class 1  to the 10 clusters
+id1 = sample(1:csize, N, replace=TRUE)
+# Allocate the n samples for class 1 to the 10 clusters
+id0 = sample(1:csize, N, replace=TRUE)  
+testdata = matrix(rnorm(2*N*p), 2*N, p)*s + rbind(m1[id1,], m0[id0,])
+dim(testdata)
+Ytest = rep(c(1, 0), each = N)
+
+
+
+
+
+
+
+# get prediction, output to table 
+predicted = bayes_rule(testdata, s, m1, m0)
+actual = Ytest
+print(table(actual, predicted))
+```
+
