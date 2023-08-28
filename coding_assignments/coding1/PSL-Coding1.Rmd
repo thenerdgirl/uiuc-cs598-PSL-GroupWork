@@ -1,8 +1,24 @@
+---
+title: "Coding Assignment 1"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmill3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
 
-# Coding Assignment 1
-# Naomi Bhagat, Michael Miller, & Joe May
-# nbhagat3, msmille3, jemay3
+# Work Breakdown
 
+
+
+# Part 1: Generate Data
+```{r part1, eval = TRUE}
 # Set Seed
 set.seed(235)
 
@@ -58,9 +74,18 @@ points(traindata[(n+1):(2*n),1], traindata[(n+1):(2*n),2], col="red")
 points(m1[1:csize,1], m1[1:csize,2], pch="+", cex=1.5, col="green")
 points(m0[1:csize,1], m0[1:csize,2], pch="+", cex=1.5, col="red");   
 legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1", "class 0"))
+```
 
-### Part 2: kNN ###
 
+# Part 2: kNN
+1. Implement kNN from scratch; use Euclidean Distance. Your implementation
+should meet the following requirements:
+- Input: Your kNN function should accept three input parameters: training data, test data, and k. No need to write your kNN function to handle any general input; it suffices to write a function that is able to handle the data for this specific simulation study: binary classification; features are two-dimensional numerical vectors.
+Output: Your function should return a vector of predictions for the test data.
+- Vectorization: Efficiently compute distances between all test points and training points simultaneously. Make predictions for all test points in a single operation.
+- No Loops: Do not use explicit loops like for or while inside your kNN function to compute distances or make predictions. Instead, harness the power of vectorized operations for efficient computations. For example, you can use broadcasting in Numpy or command outer in R.
+
+```{r part2, eval = FALSE}
 # 1. Implement kNN from scratch; use Euclidean Distance. Your implementation
 #   should meet the following requirements:
 # Input: Your kNN function should accept three input parameters: training data, 
@@ -157,9 +182,10 @@ baseline_test.pred = knn(traindata, testdata, Ytrain, k=5)
 table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=5)
 table(Ytest, implementation_test.pred)
+```
 
-### Part 3: cvkNN ###
-
+# Part 3: cvkNN
+```{r part3, eval = FALSE}
 ### Using this as reference? https://medium.com/@aspengulley/write-an-r-function-to-implement-k-fold-cross-validation-ff9d92e97ce3 ###
 
 # 1. Implement KNN classification with K chosen by 10-fold cross-validation from
@@ -245,3 +271,4 @@ cvkNN(traindata, Ytrain)
 # 
 # train.err.knn.CV
 # test.err.knn.CV
+```
