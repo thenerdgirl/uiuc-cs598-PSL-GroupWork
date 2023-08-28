@@ -4,7 +4,7 @@
 .Rproj.user/
 
 # ignore generated files 
-assignments/**/*.html
-assignments/**/*.pdf
-assignments/**/*.tex
+coding_assignments/**/*.html
+coding_assignments/**/*.pdf
+coding_assignments/**/*.tex
 
