@@ -15,7 +15,11 @@ urlcolor: cyan
 
 # Work Breakdown
 
-
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | asdf |
+| Michael Miller | fgjg |
+| Joe May        | fgjj |
 
 # Part 1: Generate Data
 ## Part 1-1
@@ -43,7 +47,6 @@ id1 = sample(1:csize, n, replace=TRUE)
 id0 = sample(1:csize, n, replace=TRUE)  
 traindata = matrix(rnorm(2*n*p), 2*n, p)*s + rbind(m1[id1,], m0[id0,])
 dim(traindata)
-#Ytrain = factor(c(rep(1,n), rep(0,n)))
 Ytrain = rep(c(1, 0), each = n)
 
 # Test sample of size 10,000
@@ -55,7 +58,6 @@ id1 = sample(1:csize, N, replace=TRUE)
 id0 = sample(1:csize, N, replace=TRUE)  
 testdata = matrix(rnorm(2*N*p), 2*N, p)*s + rbind(m1[id1,], m0[id0,])
 dim(testdata)
-#Ytest = factor(c(rep(1,N), rep(0,N)))
 Ytest = rep(c(1, 0), each = N)
 ```
 
@@ -175,9 +177,25 @@ Implement KNN classification with K chosen by 10-fold cross-validation from scra
 - It is possible that multiple K values give the (same) smallest CV error; when this happens, pick the largest K value among them, since the larger the K value, the simpler the model.
 
 ```{r part3-1, eval = TRUE}
+
+c
+
+
+
+
+
 cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
-  # set a vector cv.err to store the CV error for each k. 
-  cv.err = rep(0,maxk);
+
+  # init variables for looping through k values
+  max_k = 180
+  total_error = rep(0, max_k)
+  
+  
+  
+  
+  
+  
+  
   
   # set a vector for k values
   kvalues = seq(1, maxk, 1)
@@ -219,7 +237,7 @@ cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
 
 ## Part 3-2
 Test your code with the training/test data you just generated. Report your results (on the test data) as a 2-by-2 table and also report the value of the selected K.
-```{r part3-2, eval = TRUE}
+```{r part3-2, eval = FALSE}
 # TODO I think this is the function call we can use to test if this works
 cvkNN(traindata, Ytrain)
 
