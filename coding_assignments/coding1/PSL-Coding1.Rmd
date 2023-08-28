@@ -15,7 +15,8 @@ urlcolor: cyan
 
 # Assignment Data
 Program: MCS-DS  
-Team contributions:  
+Team contributions:
+
 | Person         | Contribution |
 |----------      |----------|
 | Naomi Bhagat   | asdf |
