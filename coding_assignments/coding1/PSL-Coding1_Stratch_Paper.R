@@ -114,19 +114,37 @@ dis = outer(1:nrow(C), 1:nrow(B), Vectorize(function(i, j) euclidean_distance(C[
 
 m=outer(1:nrow(C), 1:nrow(B), function(i, j) euclidean_distance(C[i,], B[j,]))
 
+B
+C
+Bdiff = sweep(B, 2, C[1,],"-")
+Cdiff = sweep(B, 2, C[2,],"-")
+Bsmsq = rowSums(Bdiff^2)
+Csmsq = rowSums(Cdiff^2)
+Bdist = sqrt(Bsmsq)
+Cdist = sqrt(Csmsq)
+
+subtract_rows <- function(x, y,i) {
+  sweep(x, MARGIN = 2, STATS = y[i,], FUN = "-")
+}
+subtract_rows(B,C,2)
+
+#=============
+nrow(B)
+Cx=matrix(rep(C,each = nrow(B)), ncol=2)
+Bx=matrix(rep(B,nrow(C)), ncol=2,byrow=FALSE)
+delta = Bx-Cx
+delta  
+deltasmsq=rowSums(delta^2)
+deltasmsq
+dis=matrix(sqrt(deltasmsq),nrow=2, byrow=TRUE)
+#=============
+
+
+#i=2
+#outer(1:2,1:2, function(i,j) sweep(B, MARGIN = 2, STATS = C[i,],FUN = "-"))
 
 B = traindata
 C = testdata
-
-# Calculate Euclidean distances using outer() and the vectorized function
-combined_matrix <- rbind(B, C)
-
-# Calculate Euclidean distances using the dist() function
-distance_matrix <- as.matrix(dist(combined_matrix))[1:2,1:5]
-
-distance_matrix <- as.matrix(dist(rbind(B, C)))[1:nrow(C),1:nrow(B)]
-
-
 
 k=3
 t(apply(dis, 1, function(row) order(row)[1:k]))
@@ -177,6 +195,24 @@ C = testdata
 Y = Ytrain
 dis = outer(1:nrow(B), 1:nrow(C), Vectorize(function(i, j) euclidean_distance(B[i,], C[j,])))
 head(dis)
+
+# vectorized logic?
+#=============
+traindata = B
+testdata = C
+Ytrain = Y
++
+expanded_test_data=matrix(rep(testdata,each = nrow(traindata)), ncol=2)
+expanded_train_data=matrix(rep(traindata,nrow(testdata)), ncol=2,byrow=FALSE)
+train_less_test = expanded_train_data - expanded_test_data
+train_less_test 
+train_less_test_sum_squares=rowSums(train_less_test^2)
+train_less_test_sum_squares
+neighbor_distances=matrix(sqrt(train_less_test_sum_squares),nrow=2, byrow=TRUE)
+neighbor_distances
+#=============
+
+
 
 order(dis[1,])[1:k]
 Y[order(dis[1,])]
@@ -260,7 +296,11 @@ Ytest = rep(c(1, 0), each = N)
 
 knn_from_scratch = function(train, test, truth, k) {
   
-  neighbor_distances = as.matrix(dist(rbind(train, test)))[1:nrow(test),1:nrow(train)]
+  expanded_test_data=matrix(rep(test,each = nrow(train)), ncol=2)
+  expanded_train_data=matrix(rep(train,nrow(test)), ncol=2,byrow=FALSE)
+  train_less_test = expanded_train_data - expanded_test_data
+  train_less_test_sum_squares=rowSums(train_less_test^2)
+  neighbor_distances=matrix(sqrt(train_less_test_sum_squares),nrow=2, byrow=TRUE)
   
   #neighbor_distances = outer(1:nrow(test), 1:nrow(train), Vectorize(function(i, j) euclidean_distance(test[i,], train[j,])))
   # Calculate each point's distance to neighbors
