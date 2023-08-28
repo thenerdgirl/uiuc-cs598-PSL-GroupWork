@@ -114,8 +114,6 @@ dis = outer(1:nrow(C), 1:nrow(B), Vectorize(function(i, j) euclidean_distance(C[
 
 m=outer(1:nrow(C), 1:nrow(B), function(i, j) euclidean_distance(C[i,], B[j,]))
 
-dist()
-Vectorize(m)
 
 B = traindata
 C = testdata
@@ -129,7 +127,6 @@ distance_matrix <- as.matrix(dist(combined_matrix))[1:2,1:5]
 distance_matrix <- as.matrix(dist(rbind(B, C)))[1:nrow(C),1:nrow(B)]
 
 
-dis
 
 k=3
 t(apply(dis, 1, function(row) order(row)[1:k]))
@@ -218,6 +215,7 @@ predictions
 
 #========================================================================
 
+set.seed(235)
 # import necessary libraries
 library(class)
 
@@ -258,6 +256,7 @@ dim(testdata)
 Ytest = rep(c(1, 0), each = N)
 
 #========================================================================
+
 
 knn_from_scratch = function(train, test, truth, k) {
   
