@@ -77,16 +77,13 @@ legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1
 # Part 2: kNN
 
 
-Implement kNN from scratch; use Euclidean Distance. Your implementation should meet the following requirements:
+1. Implement kNN from scratch; use Euclidean Distance. Your implementation should meet the following requirements:
+- Input: Your kNN function should accept three input parameters: training data, test data, and k. No need to write your kNN function to handle any general input; it suffices to write a function that is able to handle the data for this specific simulation study: binary classification; features are two-dimensional numerical vectors.
+- Output: Your function should return a vector of predictions for the test data.
+- Vectorization: Efficiently compute distances between all test points and training points simultaneously. Make predictions for all test points in a single operation.
+- No Loops: Do not use explicit loops like for or while inside your kNN function to compute distances or make predictions. Instead, harness the power of vectorized operations for efficient computations. For example, you can use broadcasting in Numpy or command outer in R.
 
-    Input: Your kNN function should accept three input parameters: training data, test data, and k. No need to write your kNN function to handle any general input; it suffices to write a function that is able to handle the data for this specific simulation study: binary classification; features are two-dimensional numerical vectors.
-    Output: Your function should return a vector of predictions for the test data.
-    Vectorization: Efficiently compute distances between all test points and training points simultaneously. Make predictions for all test points in a single operation.
-    No Loops: Do not use explicit loops like for or while inside your kNN function to compute distances or make predictions. Instead, harness the power of vectorized operations for efficient computations. For example, you can use broadcasting in Numpy or command outer in R.
-
-
-
-```{r part2, eval = FALSE}
+```{r part2-1, eval = TRUE}
 # Euclidean helper function
 euclidean_distance = function(point1, point2) {
   if (length(point1) == length(point2)) {
