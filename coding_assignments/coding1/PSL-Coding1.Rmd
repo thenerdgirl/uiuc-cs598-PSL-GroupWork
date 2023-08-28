@@ -176,96 +176,61 @@ Implement KNN classification with K chosen by 10-fold cross-validation from scra
 - From now on, you are allowed to use the built-in kNN function from R or Python instead of your own implementation from Part 2.  
 - It is possible that multiple K values give the (same) smallest CV error; when this happens, pick the largest K value among them, since the larger the K value, the simpler the model.
 
+We choose 180 as the max K value because there will be 180 samples in our training dataset 
+
 ```{r part3-1, eval = TRUE}
 
-c
+# init variables for looping through k values
+max_k = 180
+fold_count = 10
+k_values = 1:max_k
+average_errors = rep(0, max_k)
+fold_size = floor(nrow(traindata) / fold_count)
+random_idx = sample(1:nrow(traindata))
 
-
-
-
-
-cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
-
-  # init variables for looping through k values
-  max_k = 180
-  total_error = rep(0, max_k)
-  
-  
-  
-  
-  
-  
-  
-  
-  # set a vector for k values
-  kvalues = seq(1, maxk, 1)
-  
-  # Set variables
-  n = nrow(traindata)
-  foldSize = floor(n/nfolds)
-  
-  for(k in 1:maxk) {
-    # cumulative error for averaging out at the end
+# loop through values of k, for each, calculate n-fold cv error
+for (k in k_values){
+  # cumulative error for averaging out at the end
     error = 0
     
-    for(fold in 1:nfolds) {
-      # Sample the data
-      data_sample = # TODO ??? something like ith.fold in the example code from campuswire #3?
-        
-      # Set the knn function variables
-      temp_train = train[-data_sample,]
-      temp_train_truth = truth[-data_sample]
-      temp_test = train[data_sample,]
-      temp_test_truth = truth[data_sample]
-      
-      # Make prediction
-      temp_predict = knn(temp_train, temp_test, temp_train_truth, k=k)
-      
-      # Sum the error
-      error = error + sum(temp_predict != temp_test_truth)
-    }
+  for (fold in 1:fold_count){
+    # calculate the index for train/validate for this fold 
+    # do this by getting ordered idx (e.g. 1:10), then using that to get rand idx
+    ordered_val_idx = ((fold - 1) * fold_size + 1) : (fold * fold_size)
+    val_idx = random_idx[ordered_val_idx]
     
-    # Set the error in the array
-    cv.err[k] = error/n
+    # split data into train/val. Use negative index to exclude ones we don't want
+    fold_train_x = traindata[-val_idx, ]
+    fold_train_y = Ytrain[-val_idx]
+    fold_val_x = traindata[val_idx, ]
+    fold_val_y = Ytrain[val_idx]
+    
+    # Make prediction
+    fold_predicted_y = knn(fold_train_x, fold_val_x, fold_train_y, k=k)
+      
+    # Sum the error
+    error = error + sum(fold_predicted_y != fold_val_y)
   }
-  
-  # Return the best k and associated error here
-  # TODO remember to add a tiebreaker for if there are 2 best k's...we want the big one
-  
+    
+  # Add error to array to track
+  average_errors[k] = error / fold_count
 }
+
+# Find lowest error (larger k breaks tie) which.max returns first, so reversing
+# array will get us last
+plot(average_errors, xlab="k", ylab="Average error count", main="Error vs K")
+min_idx = length(average_errors) - which.min(rev(average_errors)) + 1
+min_error = average_errors[min_idx]
+best_k = k_values[min_idx]
 ```
 
 ## Part 3-2
 Test your code with the training/test data you just generated. Report your results (on the test data) as a 2-by-2 table and also report the value of the selected K.
-```{r part3-2, eval = FALSE}
-# TODO I think this is the function call we can use to test if this works
-cvkNN(traindata, Ytrain)
-
-# This is the code from Campuswire #3...I am truly unsure if it works
-# myk = seq(1,180,1)
-# cv.err=rep(0,m);
-# 
-# id=sample(1:(2*n),(2*n), replace=FALSE);
-# fold=c(0,  40,  80, 120, 160, 200)
-# for(i in 1:5)
-#   for(j in 1:m){
-#     
-#     ## ith.fold = rows which are in the i-th fold
-#     ith.fold = id[(fold[i]+1):fold[i+1]];   
-#     tmp=knn(traindata[-ith.fold,], traindata[ith.fold,], Ytrain[-ith.fold], k=myk[j]);
-#     cv.err[j]=cv.err[j]+sum(tmp != Ytrain[ith.fold])
-#   }
-# 
-# ## find the best k value based 5-fold CV
-# k.star=myk[order(cv.err)[1]]
-# k.star
-# 
-# ## Error of KNN where K is chosen by 5-fold CV
-# Ytrain.pred = knn(traindata, traindata, Ytrain, k=k.star)
-# train.err.knn.CV= sum(Ytrain != Ytrain.pred)/(2*n)
-# Ytest.pred = knn(traindata, testdata, Ytrain,k=k.star)
-# test.err.knn.CV = sum(Ytest != Ytest.pred)/(2*N) 
-# 
-# train.err.knn.CV
-# test.err.knn.CV
+```{r part3-2, eval = TRUE}
+# now train model using our preferred k
+predicted = knn(traindata, testdata, Ytrain, k=best_k)
+actual = Ytest
+print(table(actual, predicted))
 ```
+
+The optimal value of k is `r best_k` and it results in an average validation error of `r  min_error` and it occurs when k = `r best_k`
