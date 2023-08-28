@@ -233,4 +233,4 @@ actual = Ytest
 print(table(actual, predicted))
 ```
 
-The optimal value of k is `r best_k` and it results in an average validation error of `r  min_error` and it occurs when k = `r best_k`
+The optimal value of k is `r best_k` and it results in an average validation error of `r  min_error`.
