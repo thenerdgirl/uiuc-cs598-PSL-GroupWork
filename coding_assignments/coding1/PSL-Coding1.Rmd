@@ -168,17 +168,13 @@ table(Ytest, implementation_test.pred)
 ```
 
 # Part 3: cvkNN
-```{r part3, eval = FALSE}
-### Using this as reference? https://medium.com/@aspengulley/write-an-r-function-to-implement-k-fold-cross-validation-ff9d92e97ce3 ###
+## Part 3-1
+Implement KNN classification with K chosen by 10-fold cross-validation from scratch.  
+- Set the candidate K values from 1 to 180. (The maximum candidate K value is 180. Why?)  
+- From now on, you are allowed to use the built-in kNN function from R or Python instead of your own implementation from Part 2.  
+- It is possible that multiple K values give the (same) smallest CV error; when this happens, pick the largest K value among them, since the larger the K value, the simpler the model.
 
-# 1. Implement KNN classification with K chosen by 10-fold cross-validation from
-#   scratch. Set the candidate K values from 1 to 180. (The maximum candidate K
-#   value is 180. Why?) From now on, you are allowed to use the built-in kNN
-#   function from R or Python instead of your own implementation from Part 2.
-#   It is possible that multiple K values give the (same) smallest CV error;
-#   when this happens, pick the largest K value among them, since the larger the
-#   K value, the simpler the model.
-
+```{r part3-1, eval = TRUE}
 cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
   # set a vector cv.err to store the CV error for each k. 
   cv.err = rep(0,maxk);
@@ -219,11 +215,11 @@ cvkNN = function(train, truth, maxk = 180, nfolds = 10) {
   # TODO remember to add a tiebreaker for if there are 2 best k's...we want the big one
   
 }
+```
 
-# 2. Test your code with the training/test data you just generated. Report your
-#   results (on the test data) as a 2-by-2 table and also report the value of
-#   the selected K.
-
+## Part 3-2
+Test your code with the training/test data you just generated. Report your results (on the test data) as a 2-by-2 table and also report the value of the selected K.
+```{r part3-2, eval = TRUE}
 # TODO I think this is the function call we can use to test if this works
 cvkNN(traindata, Ytrain)
 
