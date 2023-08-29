@@ -35,9 +35,11 @@ library(class)
 
 csize = 10
 p = 2        
-s = sqrt(1/5)                         
-m1 = matrix(rnorm(csize*p), csize, p)*s + cbind( rep(1,csize), rep(0,csize) )
-m0 = matrix(rnorm(csize*p), csize, p)*s + cbind( rep(0,csize), rep(1,csize) )
+s_centers = 1
+s_x = .7
+
+m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(1,csize), rep(0,csize) )
+m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(0,csize), rep(1,csize) )
 ```
 
 ## Part 1-2
@@ -47,7 +49,7 @@ Given the 20 centers, generate a training sample of size 200 (100 from each clas
 n = 100
 id1 = sample(1:csize, n, replace=TRUE)
 id0 = sample(1:csize, n, replace=TRUE)  
-traindata = matrix(rnorm(2*n*p), 2*n, p)*s + rbind(m1[id1,], m0[id0,])
+traindata = matrix(rnorm(2*n*p), 2*n, p)*s_x + rbind(m1[id1,], m0[id0,])
 dim(traindata)
 Ytrain = rep(c(1, 0), each = n)
 
@@ -58,7 +60,7 @@ N = 5000
 id1 = sample(1:csize, N, replace=TRUE)
 # Allocate the n samples for class 1 to the 10 clusters
 id0 = sample(1:csize, N, replace=TRUE)  
-testdata = matrix(rnorm(2*N*p), 2*N, p)*s + rbind(m1[id1,], m0[id0,])
+testdata = matrix(rnorm(2*N*p), 2*N, p)*s_x + rbind(m1[id1,], m0[id0,])
 dim(testdata)
 Ytest = rep(c(1, 0), each = N)
 ```
@@ -85,7 +87,7 @@ legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1
 - Vectorization: Efficiently compute distances between all test points and training points simultaneously. Make predictions for all test points in a single operation.
 - No Loops: Do not use explicit loops like for or while inside your kNN function to compute distances or make predictions. Instead, harness the power of vectorized operations for efficient computations. For example, you can use broadcasting in Numpy or command outer in R.
 
-```{r part2-1, eval = FALSE}
+```{r part2-1, eval = TRUE}
 # Euclidean helper function
 euclidean_distance = function(point1, point2) {
   if (length(point1) == length(point2)) {
@@ -284,7 +286,7 @@ bayes_rule = function(x, s, m1, m0) {
 2. Test your code with the test data you just generated. (Note that you do not need training data for the Bayes rule.) Report your results (on the test data) as a 2-by-2 table.
 ```{r part4-2, eval = TRUE}
 # get prediction, output to table 
-predicted = bayes_rule(testdata, s, m1, m0)
+predicted = bayes_rule(testdata, s_x, m1, m0)
 actual = Ytest
 print(table(actual, predicted))
 ```
@@ -315,7 +317,7 @@ for (sim in 1:n_sims) {
   n = n_train/2
   id1 = sample(1:csize, n, replace=TRUE)
   id0 = sample(1:csize, n, replace=TRUE)  
-  train_x = matrix(rnorm(2*n*p), 2*n, p)*s + rbind(m1[id1,], m0[id0,])
+  train_x = matrix(rnorm(2*n*p), 2*n, p)*s_x + rbind(m1[id1,], m0[id0,])
   train_y = rep(c(1, 0), each = n)
 
   N = n_test/2
@@ -323,7 +325,7 @@ for (sim in 1:n_sims) {
   id1 = sample(1:csize, N, replace=TRUE)
   # Allocate the n samples for class 1 to the 10 clusters
   id0 = sample(1:csize, N, replace=TRUE)  
-  test_x = matrix(rnorm(2*N*p), 2*N, p)*s + rbind(m1[id1,], m0[id0,])
+  test_x = matrix(rnorm(2*N*p), 2*N, p)*s_x + rbind(m1[id1,], m0[id0,])
   test_y = rep(c(1, 0), each = N)
   
   #####  run the models #####
@@ -335,7 +337,7 @@ for (sim in 1:n_sims) {
   predicted_y_knn_best = knn(train_x, test_x, train_y, k=best_k)
  
   # bayes 
-  predicted_y_bayes = bayes_rule(test_x, s, m1, m0)
+  predicted_y_bayes = bayes_rule(test_x, s_centers, m1, m0)
   
   #####  store output data #####
   errors[sim, 1] = sum(predicted_y_knn7 != test_y) / n_test
