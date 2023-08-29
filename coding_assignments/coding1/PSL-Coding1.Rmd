@@ -19,9 +19,9 @@ Team contributions:
 
 | Person         | Contribution |
 |----------      |----------|
-| Naomi Bhagat   | asdf |
-| Michael Miller | fgjg |
-| Joe May        | fgjj |
+| Naomi Bhagat   | Part 1-1, 1-2, 1-3, 2-1, 2-2, 2-3, 3-1 |
+| Michael Miller | Part 4-1, 4-2, 5 |
+| Joe May        | Part 1-1, 1-2, 1-3, 2-1, 2-3 |
 
 # Part 1: Generate Data
 ## Part 1-1
@@ -136,15 +136,16 @@ knn_from_scratch = function(train, test, truth, k) {
   predictions = apply(neighborhood_votes_v, 1, determine_winner)
   return(predictions)
 }
+```
 
 # 2. Explain how you handle distance ties and voting ties; distance ties may
 #   occur when you have multiple (training) observations that are equidistant
 #   from a test observation. voting ties may occur when K is an even number and
 #   you have 50% of the k-nearest-neighbors from each of the two classes.
   
-# Ans: If the number of votes for each point is the same, we have decided to 
-#   randomly generate a class for that particular test point because the two
-#   classes at that point are equally as likely.
+If the number of votes for each point is the same, we have decided to 
+randomly generate a class for that particular test point because the two
+classes at that point are equally as likely.
 
 #  3. Test your code with the training/test data you just generated when 
 #   K = 1, 3, 5; and compare your results with knn in R or sklearn.neighbors in
@@ -152,19 +153,23 @@ knn_from_scratch = function(train, test, truth, k) {
 #   (confusion matrix) for each K value. Report the results from knn or
 #   sklearn.neighbors as a 2-by-2 table (confusion matrix) for each K value
 
+```{r part2-3, eval = TRUE}
 # k = 1
+print("k = 1")
 baseline_test.pred = knn(traindata, testdata, Ytrain, k=1)
 table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=1)
 table(Ytest, implementation_test.pred)
 
 # k = 3
+print("k = 3")
 baseline_test.pred = knn(traindata, testdata, Ytrain, k=3)
 table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=3)
 table(Ytest, implementation_test.pred)
 
 # k = 5
+print("k = 5")
 baseline_test.pred = knn(traindata, testdata, Ytrain, k=5)
 table(Ytest, baseline_test.pred)
 implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=5)
