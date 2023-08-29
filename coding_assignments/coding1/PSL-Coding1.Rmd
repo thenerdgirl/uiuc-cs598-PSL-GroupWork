@@ -96,28 +96,29 @@ euclidean_distance = function(point1, point2) {
 }
 
 
+
 knn_from_scratch = function(train, test, truth, k) {
-  neighbor_distances = outer(1:nrow(test), 1:nrow(train), Vectorize(function(i, j) euclidean_distance(test[i,], train[j,])))
-  # Calculate each point's distance to neighbors
   
-  nearest_neighbor_address = function(vector, j){
-    order(vector)[1:j]
+  expanded_test_data = matrix(rep(test,each = nrow(train)), ncol=2)
+  expanded_train_data = matrix(rep(t(train), times = nrow(test)), ncol=2, byrow = TRUE)
+  # Repeat test rows to subtract from corresponding training rows
+  
+  train_less_test = expanded_train_data - expanded_test_data
+  train_less_test_sum_squares = rowSums(train_less_test^2)
+  neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
+  # Take the sum of squares of the difference between test points from training points
+  # Uses vector functionality to calculate each point's distance to neighbors
+  
+  nearest_neighbor_address = function(j) {
+    return(head(order(j),k))
   }
   # Function to get k nearest neighbors (temp variable j for k)
   
-  nearest_neighbor_address = t(apply(neighbor_distances, 1, nearest_neighbor_address, j = k))
-  # Apply function to get k nearest neighbors for each point in a vectorized manner
-  # nearest_neighbor_address
+  neighborhood_votes = apply(neighbor_distances, 1, nearest_neighbor_address)
+  # Return address of each row's nearest neighbor
   
-  get_vote = function(indices, vote){
-    vote[indices]
-  }
-  # Function to collect votes for each point's k nearest neighbors
-  
-  neighborhood_votes = t(apply(nearest_neighbor_address, 1, get_vote, vote = truth))
-  # Apply function for each point to collect votes for each point's 
-  # k nearest neighbors in a vectorized manner
-  # neighborhood_votes
+  neighborhood_votes_v = matrix(truth[neighborhood_votes], nrow=nrow(test), byrow=TRUE)
+  # Collect votes from nearest neighbor
   
   determine_winner = function(point){
     if (sum(point) > k/2) {
@@ -130,7 +131,7 @@ knn_from_scratch = function(train, test, truth, k) {
   }
   # Determine winner given votes of k nearest neighbors. Ties are broken randomly.
   
-  predictions = apply(neighborhood_votes, 1, determine_winner)
+  predictions = apply(neighborhood_votes_v, 1, determine_winner)
   return(predictions)
 }
 

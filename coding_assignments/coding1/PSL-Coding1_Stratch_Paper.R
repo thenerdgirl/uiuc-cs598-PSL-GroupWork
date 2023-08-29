@@ -189,8 +189,8 @@ predictions = apply(votes, 1, determine_winner)
 
 # Redoing again vectorizing and also 
 
-B = traindata
-C = testdata
+B = train
+C = test
 #Y = c(1,2,3,4,5)
 Y = Ytrain
 dis = outer(1:nrow(B), 1:nrow(C), Vectorize(function(i, j) euclidean_distance(B[i,], C[j,])))
@@ -198,34 +198,53 @@ head(dis)
 
 # vectorized logic?
 #=============
-traindata = B
-testdata = C
-Ytrain = Y
-+
-expanded_test_data=matrix(rep(testdata,each = nrow(traindata)), ncol=2)
-expanded_train_data=matrix(rep(traindata,nrow(testdata)), ncol=2,byrow=FALSE)
+train = traindata
+test = testdata
+truth = Ytrain
+
+B = matrix(c(0,0,3,3,5,5,2,2,1,1,9,9), ncol=2, byrow=TRUE)
+C = matrix(c(0,0,3,3), ncol=2, byrow=TRUE)
+B = matrix(c(0,1,3,4.5,5.2,5.3,2,2,1,1,9,9), ncol=2, byrow=TRUE)
+C = matrix(c(0,1,3,3), ncol=2, byrow=TRUE)
+
+train = B
+test = C
+truth = c(0,1,1,0,0,1)
+
+
+
+expanded_test_data = matrix(rep(test,each = nrow(train)), ncol=2)
+expanded_train_data = matrix(rep(t(train), times = nrow(test)), ncol=2, byrow = TRUE)
 train_less_test = expanded_train_data - expanded_test_data
-train_less_test 
-train_less_test_sum_squares=rowSums(train_less_test^2)
-train_less_test_sum_squares
-neighbor_distances=matrix(sqrt(train_less_test_sum_squares),nrow=2, byrow=TRUE)
-neighbor_distances
-#=============
+train_less_test_sum_squares = rowSums(train_less_test^2)
+neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
+# Use vector functionality to calculate each point's distance to neighbors
 
-
-
-order(dis[1,])[1:k]
-Y[order(dis[1,])]
-
-get_vote = function(indices) {
-  nearest_address = order(dis[indices,])[1:k]
-  Y[nearest_address]
+k=3
+nearest_neighbor_address = function(j) {
+  print(length(j))
+  return(head(order(j),k))
 }
+# Function to get k nearest neighbors (temp variable j for k)
 
-neighborhood_votes = Vectorize(get_vote)
-votes = t(neighborhood_votes(1:nrow(C)))
-votes
-tail(votes)
+neighborhood_votes = apply(neighbor_distances, 1, nearest_neighbor_address)
+neighborhood_votes 
+dim(neighbor_distances)
+dim(neighborhood_votes )
+neighbor_distances[1,]
+neighbor_distances[2,]
+head(sort(neighbor_distances[1,]),3)
+head(order(neighbor_distances[1,]),3)
+neighbor_distances[1,22]
+head(sort(neighbor_distances[2,]),3)
+head(order(neighbor_distances[2,]),3)
+neighborhood_votes[1:3,1]
+neighborhood_votes[1:3,2]
+
+
+neighborhood_votes_v = matrix(truth[neighborhood_votes], nrow=nrow(test), byrow=TRUE)
+neighborhood_votes_v
+# Organizing votes according to nearest neighbor
 
 determine_winner = function(point){
   if (sum(point) > k/2) {
@@ -234,12 +253,22 @@ determine_winner = function(point){
     return(0)
   } else {
     return(sample(0:1, 1))
+    #return(0)
   }
 }
 # Determine winner given votes of k nearest neighbors. Ties are broken randomly.
 
-predictions = apply(votes, 1, determine_winner)
+predictions = apply(neighborhood_votes_v, 1, determine_winner)
 predictions
+
+traindata = B
+testdata = C
+Ytrain = c(0,1,1,0,0)
+Ytest = c(0,1)
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=3)
+table(Ytest, baseline_test.pred)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=3)
+table(Ytest, implementation_test.pred)
 
 
 
@@ -296,22 +325,26 @@ Ytest = rep(c(1, 0), each = N)
 
 knn_from_scratch = function(train, test, truth, k) {
   
-  expanded_test_data=matrix(rep(test,each = nrow(train)), ncol=2)
-  expanded_train_data=matrix(rep(train,nrow(test)), ncol=2,byrow=FALSE)
-  train_less_test = expanded_train_data - expanded_test_data
-  train_less_test_sum_squares=rowSums(train_less_test^2)
-  neighbor_distances=matrix(sqrt(train_less_test_sum_squares),nrow=2, byrow=TRUE)
+  expanded_test_data = matrix(rep(test,each = nrow(train)), ncol=2)
+  expanded_train_data = matrix(rep(t(train), times = nrow(test)), ncol=2, byrow = TRUE)
+  # Repeat test rows to subtract from corresponding training rows
   
-  #neighbor_distances = outer(1:nrow(test), 1:nrow(train), Vectorize(function(i, j) euclidean_distance(test[i,], train[j,])))
-  # Calculate each point's distance to neighbors
+  train_less_test = expanded_train_data - expanded_test_data
+  train_less_test_sum_squares = rowSums(train_less_test^2)
+  neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
+  # Take the sum of squares of the difference between test points from training points
+  # Uses vector functionality to calculate each point's distance to neighbors
   
   nearest_neighbor_address = function(j) {
-    nearest_neighbors = order(neighbor_distances[j,])[1:k]
-    return(truth[nearest_neighbors])
+    return(head(order(j),k))
   }
   # Function to get k nearest neighbors (temp variable j for k)
-  neighborhood_votes = Vectorize(nearest_neighbor_address)
-  neighborhood_votes = t(neighborhood_votes(1:nrow(test)))
+  
+  neighborhood_votes = apply(neighbor_distances, 1, nearest_neighbor_address)
+  # Return address of each row's nearest neighbor
+  
+  neighborhood_votes_v = matrix(truth[neighborhood_votes], nrow=nrow(test), byrow=TRUE)
+  # Collect votes from nearest neighbor
   
   determine_winner = function(point){
     if (sum(point) > k/2) {
@@ -324,7 +357,7 @@ knn_from_scratch = function(train, test, truth, k) {
   }
   # Determine winner given votes of k nearest neighbors. Ties are broken randomly.
   
-  predictions = apply(neighborhood_votes, 1, determine_winner)
+  predictions = apply(neighborhood_votes_v, 1, determine_winner)
   return(predictions)
 }
 
