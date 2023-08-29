@@ -36,7 +36,7 @@ library(class)
 csize = 10
 p = 2        
 s_centers = 1
-s_x = .7
+s_x = 1
 
 m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(1,csize), rep(0,csize) )
 m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(0,csize), rep(1,csize) )
@@ -190,7 +190,7 @@ get_best_k = function(x, y) {
   average_errors = rep(0, max_k)
   fold_size = floor(nrow(x) / fold_count)
   random_idx = sample(1:nrow(x))
-  
+
   # loop through values of k, for each, calculate n-fold cv error
   for (k in k_values){
     # cumulative error for averaging out at the end
