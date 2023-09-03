@@ -143,7 +143,9 @@ knn_from_scratch = function(train, test, truth, k) {
 #   occur when you have multiple (training) observations that are equidistant
 #   from a test observation. voting ties may occur when K is an even number and
 #   you have 50% of the k-nearest-neighbors from each of the two classes.
-  
+
+If there's a distance tie, the observation chosen is the one with the first address to show up in the array R generates.
+
 If the number of votes for each point is the same, we have decided to 
 randomly generate a class for that particular test point because the two
 classes at that point are equally as likely.
