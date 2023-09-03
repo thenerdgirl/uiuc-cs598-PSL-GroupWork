@@ -186,7 +186,7 @@ Implement KNN classification with K chosen by 10-fold cross-validation from scra
 - From now on, you are allowed to use the built-in kNN function from R or Python instead of your own implementation from Part 2.  
 - It is possible that multiple K values give the (same) smallest CV error; when this happens, pick the largest K value among them, since the larger the K value, the simpler the model.
 
-We choose 180 as the max K value because there will be 180 samples in our training dataset 
+We choose 180 as the max K value because there will be 180 samples in our training dataset.
 
 ```{r part3-1, eval = TRUE}
 get_best_k = function(x, y) {
@@ -248,6 +248,7 @@ best_k = get_best_k(traindata, Ytrain)
 predicted = knn(traindata, testdata, Ytrain, k=best_k)
 actual = Ytest
 print(table(actual, predicted))
+print(paste0("The value of the selected k is ", best_k))
 ```
 
 The optimal value of k is `r best_k`.
