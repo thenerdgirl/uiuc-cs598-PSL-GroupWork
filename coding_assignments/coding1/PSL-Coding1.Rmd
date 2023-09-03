@@ -36,10 +36,11 @@ library(class)
 csize = 10
 p = 2        
 s_centers = 1
-s_x = 1
+#s_x = 1
+s_x = sqrt(1/10); 
 
-m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(1,csize), rep(0,csize) )
-m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(0,csize), rep(1,csize) )
+m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(0.5,csize), rep(0.5,csize) )
+m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(-0.5,csize), rep(-0.5,csize) )
 ```
 
 ## Part 1-2
