@@ -36,11 +36,11 @@ library(class)
 csize = 10
 p = 2        
 s_centers = 1
-#s_x = 1
-s_x = sqrt(1/10); 
+s_x = 1
+#s_x = sqrt(1/2); 
 
-m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(0.5,csize), rep(0.5,csize) )
-m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(-0.5,csize), rep(-0.5,csize) )
+m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(1.0,csize), rep(1.0,csize) )
+m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(-1.0,csize), rep(-1.0,csize) )
 ```
 
 ## Part 1-2
@@ -274,7 +274,7 @@ bayes_rule = function(x, s, m1, m0) {
   denominator  = rep(0, nrow(x))
   
   # iterate through centers, and sum for each
-  for(center in center_count){
+  for(center in 1:center_count){
     current_m1 = m1[center, ]
     current_m0 = m0[center, ]
     
@@ -283,8 +283,9 @@ bayes_rule = function(x, s, m1, m0) {
     m0_norm = apply(x - current_m0, 1, function(row) sqrt(sum(row^2)))
     
     # calculate numerator and denominator portions for each center
-    numerator = numerator + exp(-m1_norm^2 / (2 * s^2))
-    denominator = denominator + exp(-m0_norm^2 / (2 * s^2))
+    denominator = denominator + exp(-m1_norm / (2 * s^2))    
+    numerator = numerator + exp(-m0_norm / (2 * s^2))
+
   }
   
   # return 1 if numerator is bigger else 0
