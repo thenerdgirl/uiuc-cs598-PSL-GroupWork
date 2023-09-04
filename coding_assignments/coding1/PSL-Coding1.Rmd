@@ -283,8 +283,8 @@ bayes_rule = function(x, s, m1, m0) {
     m0_norm = apply(x - current_m0, 1, function(row) sqrt(sum(row^2)))
     
     # calculate numerator and denominator portions for each center
-    denominator = denominator + exp(-m1_norm / (2 * s^2))    
-    numerator = numerator + exp(-m0_norm / (2 * s^2))
+    denominator = denominator + exp(-m0_norm / (2 * s^2))    
+    numerator = numerator + exp(-m1_norm / (2 * s^2))
 
   }
   
