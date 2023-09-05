@@ -18,7 +18,7 @@ m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(-0.5,csize), rep(-0
 
 
 
-n = 100
+n = 10
 id1 = sample(1:csize, n, replace=TRUE)
 id0 = sample(1:csize, n, replace=TRUE)  
 traindata = matrix(rnorm(2*n*p), 2*n, p)*s_x + rbind(m1[id1,], m0[id0,])
@@ -27,7 +27,7 @@ Ytrain = rep(c(1, 0), each = n)
 
 # Test sample of size 10,000
 
-N = 5000
+N = 50
 # Allocate the n samples for class 1  to the 10 clusters
 id1 = sample(1:csize, N, replace=TRUE)
 # Allocate the n samples for class 1 to the 10 clusters
@@ -59,9 +59,20 @@ knn_from_scratch = function(train, test, truth, k) {
   neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
   # Take the sum of squares of the difference between test points from training points
   # Uses vector functionality to calculate each point's distance to neighbors
-  
+
   nearest_neighbor_address = function(j) {
-    return(head(order(j),k))
+    # Handle distance ties by including all distance ties in the vote count
+    extra_k = 0
+    unique_j = unique(j)
+    nearest = head(sort(unique_j),k)
+    
+    get_distance_ties <- function(i) {
+      extra_k = extra_k + (sum(j == i) - 1)
+    }
+    
+    sapply(nearest, get_distance_ties)
+    
+    return(head(order(j),k+extra_k))
   }
   # Function to get k nearest neighbors (temp variable j for k)
   
@@ -85,6 +96,62 @@ knn_from_scratch = function(train, test, truth, k) {
   predictions = apply(neighborhood_votes_v, 1, determine_winner)
   return(predictions)
 }
+
+print("k = 1")
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=1)
+table(Ytest, baseline_test.pred)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=1)
+table(Ytest, implementation_test.pred)
+
+
+# for(n in nearest) {
+#   extra_k = extra_k + (sum(j == n) - 1)
+# }
+
+my_do_something <- function(i) {
+  extra_k = extra_k + (sum(j == i) - 1)
+}
+
+for (n in nearest) {
+  my_do_something(n)
+}
+
+sapply(nearest, my_do_something)
+
+
+test = c(0.8791893, 1.7848809, 0.8791893, 1.8745119, 2.3749307, 2.3526441, 3.176593, 1.1847304, 3.7154846, 1.9995022, 3.4136126, 2.7707655, 0.6056586, 2.7790663, 2.4914583, 2.6027233, 2.8103019, 2.4129525, 2.2555611, 0.6056556)
+
+extra_k = 0
+unique_j = unique(test)
+nearest = head(sort(unique_j),3)
+
+my_do_something <- function(i) {
+  extra_k = extra_k + (sum(test == i) - 1)
+}
+
+blah = sum(sapply(nearest, my_do_something))
+blah
+
+# 
+# 
+# # test_table = table(test)
+# # dupes = test_table[test_table > 1]
+# # no_dupes = unique(test)
+# maxes = head(sort(no_dupes), 3)
+# extra_k = 0
+# for(max in maxes) {
+#   extra_k = extra_k + (sum(test == max) - 1)
+# }
+# 
+# extra_k
+
+# eh = apply(maxes, 0, getsum)
+# eh
+# sum(test == 0.6056556)
+
+# This gets indices of duplicated values
+# which(duplicated(test) | duplicated(test, fromLast = TRUE))
+
 
 # part 3
 

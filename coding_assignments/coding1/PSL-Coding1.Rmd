@@ -113,7 +113,18 @@ knn_from_scratch = function(train, test, truth, k) {
   # Uses vector functionality to calculate each point's distance to neighbors
   
   nearest_neighbor_address = function(j) {
-    return(head(order(j),k))
+    # Handle distance ties by including all distance ties in the vote count
+    extra_k = 0
+    unique_j = unique(j)
+    nearest = head(sort(unique_j),k)
+    
+    get_distance_ties <- function(i) {
+      extra_k = extra_k + (sum(j == i) - 1)
+    }
+    
+    sapply(nearest, get_distance_ties)
+    
+    return(head(order(j),k+extra_k))
   }
   # Function to get k nearest neighbors (temp variable j for k)
   
@@ -144,7 +155,8 @@ knn_from_scratch = function(train, test, truth, k) {
 #   from a test observation. voting ties may occur when K is an even number and
 #   you have 50% of the k-nearest-neighbors from each of the two classes.
 
-If there's a distance tie, the observation chosen is the one with the first address to show up in the array R generates.
+If there are distance ties when determining nearest neighbors, all neighbors of
+that distance from the test point are included in the voting process.
 
 If the number of votes for each point is the same, we have decided to 
 randomly generate a class for that particular test point because the two
