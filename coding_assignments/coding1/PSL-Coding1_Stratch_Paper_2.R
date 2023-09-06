@@ -85,7 +85,15 @@ knn_from_scratch = function(train, test, truth, k) {
     print(paste0("unique_j ",unique_j))
     print("nearest ")
     print(nearest)
-        
+    
+    test_table = as.data.frame(table(j))
+    dupes = test_table[test_table$Freq > 1,]
+    print("dupes")
+    print(dupes)
+    print(dupes[1,1])
+    
+
+    
     get_distance_ties <- function(i) {
       print(paste0("j ",j," i ",i," sum(j == i) ",sum(j == i)))
       x = extra_k + (sum(j == i) - 1)
@@ -96,6 +104,18 @@ knn_from_scratch = function(train, test, truth, k) {
     temp_check = sapply(nearest, get_distance_ties)
     print("temp_check ")
     print(temp_check)
+    
+    tie_distance = dupes[1,1]
+    print("hard coded distance tie passed thru get_dist_ties")
+    print(get_distance_ties(tie_distance))
+    tie_index=which(j %in% tie_distance)
+    print( "tie_index ")
+    print( tie_index)
+    
+    truther = truth[tie_index]
+    print("truther")
+    print(truther)
+    
     extra_k = sapply(nearest, get_distance_ties)
     print(paste0("extra_k r2 ",extra_k))
     
@@ -107,6 +127,10 @@ knn_from_scratch = function(train, test, truth, k) {
     print(check2)
     print("head(order(j),k+extra_k) ")
     print(head(order(j),k+extra_k))
+    y=head(order(j),k+extra_k)
+    print("truth")
+    print(truth)
+    print(truth[y])
     return(head(order(j),k+extra_k))
   }
   
@@ -167,6 +191,8 @@ my_do_something <- function(i) {
 
 blah = sum(sapply(nearest, my_do_something))
 blah
+
+which(c(0,1,2,2.2,1,5,2.2,3) %in% 2.2)
 
 # 
 # 
