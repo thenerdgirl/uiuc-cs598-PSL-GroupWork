@@ -46,6 +46,20 @@ euclidean_distance = function(point1, point2) {
   }
 }
 
+csize=2
+n=3
+N=2
+traindata = matrix(c(1.5,1.2,1.0,0.5,0.5,1.0,-1.25,-1.25,-1.0,-0.5,-2,-1.5), ncol=2, byrow=TRUE)
+testdata = matrix(c(0,0,2,2), ncol=2, byrow=TRUE)
+Ytrain = c(1,1,1,0,0,0)
+Ytest = c(1,1)
+
+plot(traindata[,1], traindata[,2], type="n", xlab="", ylab="")
+points(traindata[1:n,1], traindata[1:n,2], col="green")
+points(traindata[(n+1):(2*n),1], traindata[(n+1):(2*n),2], col="red")
+points(m1[1:csize,1], m1[1:csize,2], pch="+", cex=1.5, col="green")
+points(m0[1:csize,1], m0[1:csize,2], pch="+", cex=1.5, col="red");   
+legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1", "class 0"))
 
 
 knn_from_scratch = function(train, test, truth, k) {
@@ -59,21 +73,43 @@ knn_from_scratch = function(train, test, truth, k) {
   neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
   # Take the sum of squares of the difference between test points from training points
   # Uses vector functionality to calculate each point's distance to neighbors
-
+  print(neighbor_distances)
+  print(train)
   nearest_neighbor_address = function(j) {
     # Handle distance ties by including all distance ties in the vote count
     extra_k = 0
     unique_j = unique(j)
     nearest = head(sort(unique_j),k)
-    
+
+    print(paste0("j ",j))
+    print(paste0("unique_j ",unique_j))
+    print("nearest ")
+    print(nearest)
+        
     get_distance_ties <- function(i) {
-      extra_k = extra_k + (sum(j == i) - 1)
+      print(paste0("j ",j," i ",i," sum(j == i) ",sum(j == i)))
+      x = extra_k + (sum(j == i) - 1)
+      #extra_k = sum(j == i)
+      return(x)
     }
+    print(paste0("extra_k r1 ",extra_k))
+    temp_check = sapply(nearest, get_distance_ties)
+    print("temp_check ")
+    print(temp_check)
+    extra_k = sapply(nearest, get_distance_ties)
+    print(paste0("extra_k r2 ",extra_k))
     
-    sapply(nearest, get_distance_ties)
-    
+    check1=k+extra_k
+    check2=order(j)
+    print("check1")
+    print(check1)
+    print("check2")
+    print(check2)
+    print("head(order(j),k+extra_k) ")
+    print(head(order(j),k+extra_k))
     return(head(order(j),k+extra_k))
   }
+  
   # Function to get k nearest neighbors (temp variable j for k)
   
   neighborhood_votes = apply(neighbor_distances, 1, nearest_neighbor_address)
