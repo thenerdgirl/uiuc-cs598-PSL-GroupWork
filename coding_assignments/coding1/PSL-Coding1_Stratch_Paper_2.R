@@ -169,7 +169,8 @@ return_arr = c()
 
 for(num in nearest_unique) {
   tie_index=which(j %in% num)
-  if(num %in% dupes[,1]) {
+  print(length(tie_index))
+  if(length(tie_index) > 1) {
     return_idx = sample(tie_index,1)
   } else {
     return_idx = tie_index
