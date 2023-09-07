@@ -36,7 +36,7 @@ testdata = matrix(rnorm(2*N*p), 2*N, p)*s_x + rbind(m1[id1,], m0[id0,])
 dim(testdata)
 Ytest = rep(c(1, 0), each = N)
 
-
+########## PART 2 TESTING ###########
 
 euclidean_distance = function(point1, point2) {
   if (length(point1) == length(point2)) {
@@ -63,7 +63,6 @@ legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1
 
 
 knn_from_scratch = function(train, test, truth, k) {
-  
   expanded_test_data = matrix(rep(test,each = nrow(train)), ncol=2)
   expanded_train_data = matrix(rep(t(train), times = nrow(test)), ncol=2, byrow = TRUE)
   # Repeat test rows to subtract from corresponding training rows
@@ -73,65 +72,38 @@ knn_from_scratch = function(train, test, truth, k) {
   neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
   # Take the sum of squares of the difference between test points from training points
   # Uses vector functionality to calculate each point's distance to neighbors
-  print(neighbor_distances)
-  print(train)
+  
   nearest_neighbor_address = function(j) {
-    # Handle distance ties by including all distance ties in the vote count
-    extra_k = 0
-    unique_j = unique(j)
-    nearest = head(sort(unique_j),k)
+    nearest_unique = head(sort(unique(j)),k)
 
-    print(paste0("j ",j))
-    print(paste0("unique_j ",unique_j))
-    print("nearest ")
-    print(nearest)
-    
-    test_table = as.data.frame(table(j))
-    dupes = test_table[test_table$Freq > 1,]
-    print("dupes")
-    print(dupes)
-    print(dupes[1,1])
-    
+    frequencies = as.data.frame(table(j))
+    duplicates = frequencies[frequencies$Freq > 1,]
 
+    # for(num in nearest_unique) {
+    #   tie_index=which(j %in% num)
+    #   if(num %in% duplicates[,1]) {
+    #     return_idx = sample(tie_index,1)
+    #   } else {
+    #     return_idx = tie_index
+    #   }
+    #   return_arr = append(return_arr,return_idx)
+    # }
     
-    get_distance_ties <- function(i) {
-      print(paste0("j ",j," i ",i," sum(j == i) ",sum(j == i)))
-      x = extra_k + (sum(j == i) - 1)
-      #extra_k = sum(j == i)
-      return(x)
+    get_nearest_indexes <- function(num) {
+      tie_index=which(j %in% num)
+      if(num %in% duplicates[,1]) {
+        return_idx = sample(tie_index,1)
+      } else {
+        return_idx = tie_index
+      }
+      # return_arr = append(return_arr,return_idx)
+      return(return_idx)
     }
-    print(paste0("extra_k r1 ",extra_k))
-    temp_check = sapply(nearest, get_distance_ties)
-    print("temp_check ")
-    print(temp_check)
     
-    tie_distance = dupes[1,1]
-    print("hard coded distance tie passed thru get_dist_ties")
-    print(get_distance_ties(tie_distance))
-    tie_index=which(j %in% tie_distance)
-    print( "tie_index ")
-    print( tie_index)
+    test = unlist(lapply(nearest_unique, get_nearest_indexes))
+    print(test)
     
-    truther = truth[tie_index]
-    print("truther")
-    print(truther)
-    
-    extra_k = sapply(nearest, get_distance_ties)
-    print(paste0("extra_k r2 ",extra_k))
-    
-    check1=k+extra_k
-    check2=order(j)
-    print("check1")
-    print(check1)
-    print("check2")
-    print(check2)
-    print("head(order(j),k+extra_k) ")
-    print(head(order(j),k+extra_k))
-    y=head(order(j),k+extra_k)
-    print("truth")
-    print(truth)
-    print(truth[y])
-    return(head(order(j),k+extra_k))
+    return(test)
   }
   
   # Function to get k nearest neighbors (temp variable j for k)
@@ -157,10 +129,10 @@ knn_from_scratch = function(train, test, truth, k) {
   return(predictions)
 }
 
-print("k = 1")
-baseline_test.pred = knn(traindata, testdata, Ytrain, k=1)
+print("k = 3")
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=3)
 table(Ytest, baseline_test.pred)
-implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=1)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=3)
 table(Ytest, implementation_test.pred)
 
 
@@ -168,18 +140,82 @@ table(Ytest, implementation_test.pred)
 #   extra_k = extra_k + (sum(j == n) - 1)
 # }
 
-my_do_something <- function(i) {
-  extra_k = extra_k + (sum(j == i) - 1)
+# my_do_something <- function(i) {
+#   extra_k = extra_k + (sum(j == i) - 1)
+# }
+# 
+# for (n in nearest) {
+#   my_do_something(n)
+# }
+# 
+# sapply(nearest, my_do_something)
+
+
+j = c(0.8791893, 1.7848809, 0.8791893, 1.8745119, 2.3749307, 2.3526441, 3.176593, 1.1847304, 3.7154846, 1.7848809, 3.4136126, 2.7707655, 0.6056586, 2.7790663, 2.4914583, 2.6027233, 2.8103019, 2.4129525, 2.2555611, 2.2555611)
+truth = c(1,0,0,1,0,1,1,1,0,0,0,0,1,1,0,1,0,1,0,1)
+k = 3
+
+# get the top k things
+nearest_unique = head(sort(unique(j)),k)
+nearest_unique
+
+frequencies = as.data.frame(table(j))
+dupes = frequencies[frequencies$Freq > 1,]
+dupes
+
+dupes[,1]
+
+return_arr = c()
+
+for(num in nearest_unique) {
+  tie_index=which(j %in% num)
+  if(num %in% dupes[,1]) {
+    return_idx = sample(tie_index,1)
+  } else {
+    return_idx = tie_index
+  }
+  return_arr = append(return_arr,return_idx)
 }
 
-for (n in nearest) {
-  my_do_something(n)
+return_arr
+
+
+# convert this bish
+
+for (num in nearest_unique) {
+  get_nearest_indexes(num)
+}
+  
+get_nearest_indexes <- function(num) {
+  tie_index=which(j %in% num)
+  if(num %in% dupes[,1]) {
+    return_idx = sample(tie_index,1)
+  } else {
+    return_idx = tie_index
+  }
+  # return_arr = append(return_arr,return_idx)
+  return(return_idx)
 }
 
-sapply(nearest, my_do_something)
+# convert part 2
+sapply(nearest_unique, get_nearest_indexes)
 
 
-test = c(0.8791893, 1.7848809, 0.8791893, 1.8745119, 2.3749307, 2.3526441, 3.176593, 1.1847304, 3.7154846, 1.9995022, 3.4136126, 2.7707655, 0.6056586, 2.7790663, 2.4914583, 2.6027233, 2.8103019, 2.4129525, 2.2555611, 0.6056556)
+
+frequencies = as.data.frame(table(j))
+dupes = frequencies[frequencies$Freq > 1,]
+print(">>> dupes")
+print(dupes)
+
+for(i in 1:ncol(dupes)) {
+  tie_distance = dupes[i,1]
+  tie_index=which(j %in% tie_distance)
+  
+}
+
+
+test_truth = c(0,1,1)
+match(1,test_truth)
 
 extra_k = 0
 unique_j = unique(test)
@@ -339,7 +375,7 @@ print(paste0("center_count ",head(center_count),", numerator ",head(numerator),"
 
 
 for(center in 1:center_count){
-#for(center in 1){
+  #for(center in 1){
   center=1
   print(paste0("center ",center))
   current_m1 = m1[center, ]
@@ -366,7 +402,7 @@ for(center in 1:center_count){
   # calculate numerator and denominator portions for each center
   denominator = denominator + exp(-m1_norm/(2 * s^2))
   numerator = numerator + exp(-m0_norm / (2 * s^2))
-
+  
   
   #numerator = sum(exp(-m1_norm / (2 * s^2)))
   #denominator = sum(exp(-m0_norm / (2 * s^2)))
