@@ -1,0 +1,167 @@
+---
+title: "Coding Assignment 2"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmill3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Part 1-1, 1-3 |
+| Michael Miller | Part 1-2 |
+| Joe May        | Part 2 |
+
+# Part 1: Implement Lasso
+## Part 1-1
+First, write a function one_var_lasso that takes the following inputs:
+
+v=(v1,…,vn)^t ,z=(z1,…,z n)^t, λ>0
+
+and solves the one-variable Lasso problem.
+```{r part1-1, eval = TRUE}
+# Set Seed
+set.seed(235)
+
+# import necessary libraries
+library(class)
+
+one_var_lasso = function(v, z, lam) {
+  n = length(v)
+  z_magnitude = norm(z, type="2")
+  
+  # Calculate a using step 4 of Lasso Derivation (https://liangfgithub.github.io/Coding/OneVarLasso.pdf)
+  a = (t(v) %*% z) / z_magnitude^2
+  
+  # Calculate eta
+  eta = (2 * n * lam) / z_magnitude^2
+  
+  # Return x* as piecewise function using a and eta from step 1 of Lasso Derivation
+  if(a > eta/2) {
+    return(a - (eta/2))
+  } else if(abs(a) <= eta/2) {
+    return(0)
+  } else if(a < -eta/2) {
+    return(a + eta/2)
+  }
+}
+
+```
+
+## Part 1-2
+Next, write your own function MyLasso to implement the Coordinate Descent (CD) algorithm by repeatedly calling one_var_lasso. In the CD algorithm, at each iteration, we solve a one-variable Lasso problem for βj while holding the other (p-1) coefficients at their current values.
+
+```{r part1-2, eval = TRUE}
+MyLasso = function(X, y, lam.seq, maxit = 100) {
+    
+    # Input
+    # X: n-by-p design matrix without the intercept 
+    # y: n-by-1 response vector 
+    # lam.seq: sequence of lambda values (arranged from large to small)
+    # maxit: number of updates for each lambda 
+    
+    # Output
+    # B: a (p+1)-by-length(lam.seq) coefficient matrix 
+    #    with the first row being the intercept sequence
+
+    n = length(y)
+    p = dim(X)[2]
+    nlam = length(lam.seq)
+    B = matrix(0, ncol = nlam, nrow = (p+1))
+    rownames(B) = c("Intercept", colnames(X)) 
+
+    ##############################
+    # YOUR CODE: 
+    # (1) new.X = centered & scaled X; 
+    # (2) record the centers and scales used in (1) 
+    ##############################
+
+    # Initialize coef vector b and residual vector r
+    b = rep(0, p)
+    r = y
+    
+    # Triple nested loop
+    for (m in 1:nlam) {
+      for (step in 1:maxit) {
+        for (j in 1:p) {
+          r = r + (new.X[, j] * b[j])
+          b[j] = one_var_lasso(r, new.X[, j], lam.seq[m])
+          r = r - new.X[, j] * b[j]
+        }
+      }
+      B[-1, m] = b
+    }
+   
+    ##############################
+    # YOUR CODE:
+    # scale back the coefficients;
+    # update the intercepts stored in B[1, ]
+    ##############################
+    
+    return(B)
+}
+```
+
+## Part 1-3
+Test your function MyLasso on the data set Coding2_Data.csv with a specific lambda sequence (see the sample code).
+
+Your function should output estimated Lasso coefficients similar to the ones returned by R with option standardized = TRUE. The maximum difference between the two coefficient matrices should be less than 0.005.
+
+```{r part1-3, eval = TRUE}
+myData = read.csv("Coding2_Data.csv")
+X = as.matrix(myData[, -14])
+y = myData$Y
+lam.seq = exp(seq(-1, -8, length.out = 80))
+myout = MyLasso(X, y, lam.seq)
+```
+
+# Part 2: Simulation Study
+Consider the following six procedures:
+- Full: Fit a linear regression model using all features
+- Ridge.min : Ridge regression using lambda.min
+- Lasso.min and Lasso.1se: Lasso using lambda.min or lambda.1se
+- L.Refit: Refit the model selected by Lasso using lambda.1se
+- PCR: principle components regression with the number of components chosen by 10-fold cross validati
+
+# Part 2-1: Case I
+Download Coding2_Data2.csv [Link]. The first 14 columns are the same as the data set we used in Part I with Y being the response variable (moved to the 1st column). The additional 78 more predictors are the quadratic and interaction terms of the original 13 predictors.
+
+[a] Conduct the following simulation exercise 50 times: In each iteration, randomly split the data into two parts, 75% for training and 25% for testing. For each of the six procedures, train a model using the training subset and generate predictions for the test subset. Record the Mean Squared Prediction Error (MSPE) based on these test data predictions.
+
+[b] Graphically summarize your findings on the MSPE using a strip chart, and consider overlaying a boxplot for additional insights.
+
+[c] Based on the outcomes of your simulation study, please address the following questions:
+- Which procedure or procedures yield the best performance in terms of MSPE?
+- Conversely, which procedure or procedures show the poorest performance?
+- In the context of Lasso regression, which procedure, Lasso.min or Lasso.1se, yields a better MSPE?
+- Is refitting advantageous in this case? In other words, does L.Refit outperform Lasso.1se?
+- Is variable selection or shrinkage warranted for this particular dataset? To clarify, do you find the performance of the Full model to be comparable to, or divergent from, the best-performing procedure among the other five?
+```{r part2-1, eval = TRUE}
+
+```
+# Part 2-2: Case II
+Download Coding2_Data3.csv [Link]. The first 92 columns are identical to those in Coding2_Data2.csv,
+with the addition of 500 columns of artificially generated noise features.
+
+Repeat [a] and [b] above for the six procedures excluding the Full procedure. Graphically summarize your findings on Mean Squared Prediction Error (MSPE) using a strip chart, and consider overlaying a boxplot for additional insights.
+
+[c] Address the following questions:
+- Which procedure or procedures yield the best performance in terms of MSPE?
+- Conversely, which procedure or procedures show the poorest performance?
+- Have you observed any procedure or procedures that performed well in Case I but exhibited poorer performance in Case II, or vice versa? If so, please offer an explanation.
+- Given that Coding2_Data3.csv includes all features found in Coding2_Data2.csv, one might anticipate that the best MSPE in Case II would be equal to or lower than the best MSPE in Case I. Do your simulation results corroborate this expectation? If not, please offer an explanation.
+
+```{r part2-2, eval = TRUE}
+
+```
