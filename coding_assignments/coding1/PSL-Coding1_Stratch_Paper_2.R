@@ -2,7 +2,8 @@
 
 
 
-set.seed(235)
+#set.seed(235)
+set.seed(5245)
 
 # import necessary libraries
 library(class)
@@ -78,7 +79,10 @@ knn_from_scratch = function(train, test, truth, k) {
 
     frequencies = as.data.frame(table(j))
     duplicates = frequencies[frequencies$Freq > 1,]
-
+    print(train)
+    print(test)
+    print(truth)
+  print(duplicates)
     # for(num in nearest_unique) {
     #   tie_index=which(j %in% num)
     #   if(num %in% duplicates[,1]) {
@@ -91,16 +95,27 @@ knn_from_scratch = function(train, test, truth, k) {
     
     get_nearest_indexes <- function(num) {
       tie_index=which(j %in% num)
+      cat("\n")
+      print(tie_index)
+      print("duplicates")
+      print(duplicates)
       if(num %in% duplicates[,1]) {
         return_idx = sample(tie_index,1)
+        print("ant")
+        print(tie_index)
+        print(return_idx)
       } else {
+        print("cons")
         return_idx = tie_index
       }
       # return_arr = append(return_arr,return_idx)
+      cat("\n")
+      print(return_idx)
       return(return_idx)
     }
     
     test = unlist(lapply(nearest_unique, get_nearest_indexes))
+    print("test")
     print(test)
     
     return(test)
