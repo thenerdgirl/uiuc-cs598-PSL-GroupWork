@@ -19,8 +19,8 @@ Team contributions:
 
 | Person         | Contribution |
 |----------      |----------|
-| Naomi Bhagat   | Part 1-1, 1-3 |
-| Michael Miller | Part 1-2 |
+| Naomi Bhagat   | Part 1-1, 1-2, 1-3 |
+| Michael Miller | Part 2 |
 | Joe May        | Part 2 |
 
 # Part 1: Implement Lasso
