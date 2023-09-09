@@ -35,7 +35,7 @@ and solves the one-variable Lasso problem.
 set.seed(235)
 
 # import necessary libraries
-library(class)
+library(glmnet)
 
 one_var_lasso = function(v, z, lam) {
   n = length(v)
@@ -85,6 +85,13 @@ MyLasso = function(X, y, lam.seq, maxit = 100) {
     # YOUR CODE: 
     # (1) new.X = centered & scaled X; 
     # (2) record the centers and scales used in (1) 
+    
+    standard_deviation_x = apply(X, 2, sd) * sqrt((n - 1) / n)
+    new.X = X
+    for(i in 1:p) {
+      new.X[, i] = (new.X[, i] - mean(new.X[, i])) / standard_deviation_x[i]
+    }
+    
     ##############################
 
     # Initialize coef vector b and residual vector r
@@ -107,6 +114,20 @@ MyLasso = function(X, y, lam.seq, maxit = 100) {
     # YOUR CODE:
     # scale back the coefficients;
     # update the intercepts stored in B[1, ]
+    
+    # Update the intercepts
+    for(lam in 1:nlam) {
+      B[1, lam] = mean(y)
+      for(i in 1:p) {
+        B[1, lam] = B[1, lam] - B[i + 1, lam] * (mean(X[, i]) / standard_deviation_x[i])
+      }
+    }
+    
+    # Scale back
+    for(i in 1:p) {
+      B[i+1,] = B[i+1,] / standard_deviation_x[i]
+    }
+    
     ##############################
     
     return(B)
@@ -124,6 +145,9 @@ X = as.matrix(myData[, -14])
 y = myData$Y
 lam.seq = exp(seq(-1, -8, length.out = 80))
 myout = MyLasso(X, y, lam.seq)
+
+baseline_lasso = glmnet(X, y, alpha = 1, lambda = lam.seq)
+max(abs(coef(baseline_lasso) - myout))
 ```
 
 # Part 2: Simulation Study
