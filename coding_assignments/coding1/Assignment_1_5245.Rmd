@@ -15,7 +15,7 @@ urlcolor: cyan
 
 # Assignment Data
 
-Program: MCS-DS\
+Program: MCS-DS
 Team contributions:
 
 | Person         | Contribution                                |
