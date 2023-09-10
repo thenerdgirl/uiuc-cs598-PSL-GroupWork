@@ -194,7 +194,6 @@ run_simulation = function(in_df) {
   
   # parameters for the simulation
   n_sims = 50
-  n_sims = 3 # debug goes faster
     
   # load data
   sim_df = read.csv("Coding2_Data2.csv")
@@ -317,9 +316,14 @@ Repeat [a] and [b] above for the six procedures excluding the Full procedure. Gr
 ```{r case2, eval = TRUE}
 
 # load data
-case2_data = read.csv("Coding2_Data2.csv")
+case2_data = read.csv("Coding2_Data3.csv")
 
 results = run_simulation(case2_data)
+
+#exclude full fit
+results = results[, -1]
+model_names = model_names[-1]
+
 
 plot_df = data.frame(results)
 colnames(plot_df) = model_names
@@ -338,8 +342,6 @@ stripchart(plot_df,
 ```
 
 ## Part c Answers: 
-1. The best MSPE performance is yielded by the ADF procedure. 
-2. The worst MSPE performance is yielded by the ADF procedure. 
-3. Lasso.min yields better performance
-4. Refitting is advantageous because the refit model outperforms the lasso 1se model. 
-5. Variable selection is warranted for this dataset. The performance of full model is significantly worse than fine tuned models. 
+1. Min lasso performs the best.
+2. PCR performs the poorest. 
+3. All models perform worse, however in particular PCR and ridge perform much more poorly. ~ADDITIONAL WORDS~ 
