@@ -166,24 +166,15 @@ Download Coding2_Data2.csv [Link]. The first 14 columns are the same as the data
 
 [a] Conduct the following simulation exercise 50 times: In each iteration, randomly split the data into two parts, 75% for training and 25% for testing. For each of the six procedures, train a model using the training subset and generate predictions for the test subset. Record the Mean Squared Prediction Error (MSPE) based on these test data predictions.
 
-[b] Graphically summarize your findings on the MSPE using a strip chart, and consider overlaying a boxplot for additional insights.
-
-[c] Based on the outcomes of your simulation study, please address the following questions:
-- Which procedure or procedures yield the best performance in terms of MSPE?
-- Conversely, which procedure or procedures show the poorest performance?
-- In the context of Lasso regression, which procedure, Lasso.min or Lasso.1se, yields a better MSPE?
-- Is refitting advantageous in this case? In other words, does L.Refit outperform Lasso.1se?
-- Is variable selection or shrinkage warranted for this particular dataset? To clarify, do you find the performance of the Full model to be comparable to, or divergent from, the best-performing procedure among the other five?
 ```{r part2-1a, eval = TRUE}
 # parameters for the simulation
-n_sims = 5 # faster for debugging during dev
-#n_sims = 50
-model_names = c("Full linear model",
-                "Ridge - min lambda",
-                "Lasso - min lambda",
-                "Lasso - 1se lambda",
-                "Linear model using 1se lambda refit",
-                "PCR - 10fold cv")
+n_sims = 50
+model_names = c("Full linear",
+                "Ridge: min λ",
+                "Lasso: min λ",
+                "Lasso: 1se λ",
+                "1se refit",
+                "PCR")
 n_models = length(model_names)
   
 # suggested lambda sequence to increase performance
@@ -218,7 +209,7 @@ for (sim in 1:n_sims) {
   
   # ridge min
   model_ridge = cv.glmnet(train_x, train_y, alpha = 0, lambda = lambdas)
-  predictions = as.vector(predict(model_ridge_min, s = model_ridge$lambda.min, newx = test_x))
+  predictions = as.vector(predict(model_ridge, s = model_ridge$lambda.min, newx = test_x))
   results[sim, 2] = mean((test_y - predictions)^2)
   
   # lassos 
@@ -264,16 +255,20 @@ for (sim in 1:n_sims) {
 [b] Graphically summarize your findings on the MSPE using a strip chart, and consider overlaying a boxplot for additional insights.
 ```{r part2-1b, eval = TRUE}
 
-  plot.new()
-  stripchart(results, 
-             method = "jitter", 
-             main = "Simulation Study Mean Squared Prediction Errors", 
-             ylabel = "Mean Squared Prediction Error")
-  axis(1, at = length(model_names), labels = model_names)
-  dev.off()
+plot_df = data.frame(results)
+colnames(plot_df) = model_names
+
+# make margins better
+par(mar = c(7, 4, 4, 4))
+
+boxplot(plot_df, 
+        main = "MSPE for Simulation Study",
+        las = 2)
+stripchart(plot_df,
+           vertical = TRUE,
+           add = TRUE)
 
 ```
-
 
 [c] Based on the outcomes of your simulation study, please address the following questions:
 - Which procedure or procedures yield the best performance in terms of MSPE?
@@ -282,8 +277,13 @@ for (sim in 1:n_sims) {
 - Is refitting advantageous in this case? In other words, does L.Refit outperform Lasso.1se?
 - Is variable selection or shrinkage warranted for this particular dataset? To clarify, do you find the performance of the Full model to be comparable to, or divergent from, the best-performing procedure among the other five?
 
-```{r part2-1c, eval = TRUE}
-```
+## Part c Answers: 
+1. The best MSPE performance is yielded by the ridge procedure. 
+2. The worst MSPE performance is yielded by the full linear procedure. 
+3. Lasso.min yields better performance.
+4. Refitting is not advantageous because the refit model does not outperform the lasso 1se model. 
+5. Variable selection is warranted for this dataset. The performance of full model is significantly worse than fine tuned models. 
+
 
 # Part 2-2: Case II
 Download Coding2_Data3.csv [Link]. The first 92 columns are identical to those in Coding2_Data2.csv,
@@ -291,12 +291,18 @@ with the addition of 500 columns of artificially generated noise features.
 
 Repeat [a] and [b] above for the six procedures excluding the Full procedure. Graphically summarize your findings on Mean Squared Prediction Error (MSPE) using a strip chart, and consider overlaying a boxplot for additional insights.
 
+```{r part2-1c, eval = TRUE}
+```
+
 [c] Address the following questions:
 - Which procedure or procedures yield the best performance in terms of MSPE?
 - Conversely, which procedure or procedures show the poorest performance?
 - Have you observed any procedure or procedures that performed well in Case I but exhibited poorer performance in Case II, or vice versa? If so, please offer an explanation.
 - Given that Coding2_Data3.csv includes all features found in Coding2_Data2.csv, one might anticipate that the best MSPE in Case II would be equal to or lower than the best MSPE in Case I. Do your simulation results corroborate this expectation? If not, please offer an explanation.
 
-```{r part2-2, eval = TRUE}
-
-```
+## Part c Answers: 
+1. The best MSPE performance is yielded by the ADF procedure. 
+2. The worst MSPE performance is yielded by the ADF procedure. 
+3. Lasso.min yields better performance
+4. Refitting is advantageous because the refit model outperforms the lasso 1se model. 
+5. Variable selection is warranted for this dataset. The performance of full model is significantly worse than fine tuned models. 
