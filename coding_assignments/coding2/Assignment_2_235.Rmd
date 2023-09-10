@@ -198,16 +198,25 @@ for (sim in 1:n_sims) {
   train_x = as.matrix(train_df[, -1])
   train_y = train_df[, 1]
   
+  test_x = as.matrix(test_df[, -1])
+  test_y = test_df[, 1]
+  
   #### For each model, train, eval, and store results #### 
   # full lm
-  model_full 		  = lm(Y ~ ., data = train_df)
+  model_full = lm(Y ~ ., data = train_df)
   predictions = predict(model_full, newdata = test_df)
   results[sim, 1] = mean((test_df$Y - predictions)^2)
   
   # ridge min
-  model_ridge_min = lm(Y ~ ., data = train_df)
-  results[sim, 2] = 
+  default_ridge = cv.glmnet(train_x, train_y, alpha = 0)
+  min_lambda = default_ridge$lambda.min
+  model_ridge_min = glmnet(train_x, train_y, lambda = min_lambda)
+  predictions = as.vector(predict(model_ridge_min, s = min_lambda, newx = test_x))
+  results[sim, 2] = mean((test_y - predictions)^2)
   
+  # lassos 
+  cv.glmn
+  default_lasso = cv.glmnet(train_x, train_y, alpha = 1)
   # lasso min
   model_lasso_min = lm(Y ~ ., data = train_df)
   results[sim, 3] = 
