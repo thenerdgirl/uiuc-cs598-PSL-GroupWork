@@ -176,12 +176,16 @@ Download Coding2_Data2.csv [Link]. The first 14 columns are the same as the data
 ```{r part2-1, eval = TRUE}
 # parameters for the simulation
 n_sims = 1 # faster for debugging during dev
-train_fraction = .75
 #n_sims = 50
+n_models = 6
+train_fraction = .75
 
 # load data
 sim_df = read.csv("Coding2_Data2.csv")
 n = nrow(sim_df)
+
+# preallocate results mat, each model is a column
+results = matrix(0, nrow = n_sims, ncol = n_models)
 
 # iterate, running each simulation 
 for (sim in 1:n_sims) {
@@ -190,12 +194,35 @@ for (sim in 1:n_sims) {
   train_df = sim_df[train_idx, ]
   test_df = sim_df[-train_idx, ]
   
-  model_full 		  = lm(Y ~ :, data = train_df)
-  model_ridge_min = lm(Y ~ :, data = train_df)
-  model_lasso_min = lm(Y ~ :, data = train_df)
-  model_l_refit	  = lm(Y ~ :, data = train_df)
-  model_pcr 		  = lm(Y ~ :, data = train_df)
+  # get X and Y mats
+  train_x = as.matrix(train_df[, -1])
+  train_y = train_df[, 1]
   
+  #### For each model, train, eval, and store results #### 
+  # full lm
+  model_full 		  = lm(Y ~ ., data = train_df)
+  predictions = predict(model_full, newdata = test_df)
+  results[sim, 1] = mean((test_df$Y - predictions)^2)
+  
+  # ridge min
+  model_ridge_min = lm(Y ~ ., data = train_df)
+  results[sim, 2] = 
+  
+  # lasso min
+  model_lasso_min = lm(Y ~ ., data = train_df)
+  results[sim, 3] = 
+  
+  # lasso with 1se
+  model_lasso_se = 
+  results[sim, 4] = 
+  
+  # lasso refit
+  model_l_refit	  = lm(Y ~ ., data = train_df)
+  results[sim, 5] = 
+  
+  # pcr
+  model_pcr 		  = lm(Y ~ ., data = train_df)
+  results[sim, 6] = 
 }
 
 
