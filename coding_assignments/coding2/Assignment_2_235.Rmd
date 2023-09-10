@@ -172,6 +172,20 @@ Download Coding2_Data2.csv [Link]. The first 14 columns are the same as the data
 - Is refitting advantageous in this case? In other words, does L.Refit outperform Lasso.1se?
 - Is variable selection or shrinkage warranted for this particular dataset? To clarify, do you find the performance of the Full model to be comparable to, or divergent from, the best-performing procedure among the other five?
 ```{r part2-1, eval = TRUE}
+# parameters for the simulation
+n_sims = 1 # faster for debugging during dev
+train_fraction = .75
+#n_sims = 50
+
+# iterate, running each simulation 
+for (sim in 1:n_sims) {
+  
+  
+}
+
+
+
+
 
 ```
 # Part 2-2: Case II
