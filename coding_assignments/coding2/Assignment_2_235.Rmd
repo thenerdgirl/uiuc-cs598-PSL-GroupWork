@@ -38,6 +38,7 @@ set.seed(235)
 
 # import necessary libraries
 library(glmnet)
+library(pls)
 
 one_var_lasso = function(v, z, lam) {
   n = length(v)
@@ -178,7 +179,9 @@ Download Coding2_Data2.csv [Link]. The first 14 columns are the same as the data
 n_sims = 1 # faster for debugging during dev
 #n_sims = 50
 n_models = 6
-train_fraction = .75
+  
+# suggested lambda sequence to increase performance
+lambdas = exp(seq(-10, 1, length.out = 100))
 
 # load data
 sim_df = read.csv("Coding2_Data2.csv")
@@ -205,37 +208,50 @@ for (sim in 1:n_sims) {
   # full lm
   model_full = lm(Y ~ ., data = train_df)
   predictions = predict(model_full, newdata = test_df)
-  results[sim, 1] = mean((test_df$Y - predictions)^2)
+  results[sim, 1] = mean((test_y - predictions)^2)
   
   # ridge min
-  default_ridge = cv.glmnet(train_x, train_y, alpha = 0)
-  min_lambda = default_ridge$lambda.min
-  model_ridge_min = glmnet(train_x, train_y, lambda = min_lambda)
-  predictions = as.vector(predict(model_ridge_min, s = min_lambda, newx = test_x))
+  model_ridge = cv.glmnet(train_x, train_y, alpha = 0, lambda = lambdas)
+  predictions = as.vector(predict(model_ridge_min, s = model_ridge$lambda.min, newx = test_x))
   results[sim, 2] = mean((test_y - predictions)^2)
   
   # lassos 
-  cv.glmn
-  default_lasso = cv.glmnet(train_x, train_y, alpha = 1)
+  model_lasso = cv.glmnet(train_x, train_y, alpha = 1)
+  
   # lasso min
-  model_lasso_min = lm(Y ~ ., data = train_df)
-  results[sim, 3] = 
+  predictions = as.vector(predict(model_lasso, s = model_lasso$lambda.min, newx = test_x))
+  results[sim, 3] = mean((test_y - predictions)^2)
   
   # lasso with 1se
-  model_lasso_se = 
-  results[sim, 4] = 
+  predictions = as.vector(predict(model_lasso, s = model_lasso$lambda.1se, newx = test_x))
+  results[sim, 4] = mean((test_y - predictions)^2)
   
   # lasso refit
-  model_l_refit	  = lm(Y ~ ., data = train_df)
-  results[sim, 5] = 
+  # need to convert variables we selected into a formula so that 
+  # we can use it in lm
+  coefs = predict(model_lasso, s = model_lasso$lambda.1se, type = "coefficients")
+  selected_vars = row.names(coefs)[which(coefs != 0)[-1]]
+  formula_str = paste("Y ~ ", paste(selected_vars, collapse = " + "))
+  formula = as.formula(formula_str)
+  
+  model_l_refit = lm(formula, data = train_df)
+  
+  predictions = predict(model_l_refit, newdata = test_df)
+  results[sim, 5] = mean((test_y - predictions)^2)
   
   # pcr
-  model_pcr 		  = lm(Y ~ ., data = train_df)
-  results[sim, 6] = 
+  model_pcr = pcr(Y ~ ., data = train_df, validation = "CV", scale = TRUE)
+  cv_error = RMSEP(model_pcr)$val[1, , ]
+  best_component = which.min(cv_error) - 1 
+  
+  # handle edge case where best_component is 0
+  if (best_component == 0) {
+      predictions = mean(test_y)
+    } else {
+      predictions = predict(model_pcr, newdata = test_df, ncomp = best_component)
+    }
+  results[sim, 6] = mean((test_y - predictions)^2)
 }
-
-
-
 
 
 ```
