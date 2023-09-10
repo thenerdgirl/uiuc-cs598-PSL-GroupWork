@@ -23,6 +23,8 @@ Team contributions:
 | Michael Miller | Part 2 |
 | Joe May        | Part 2 |
 
+Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/123)
+
 # Part 1: Implement Lasso
 ## Part 1-1
 First, write a function one_var_lasso that takes the following inputs:
@@ -177,9 +179,22 @@ n_sims = 1 # faster for debugging during dev
 train_fraction = .75
 #n_sims = 50
 
+# load data
+sim_df = read.csv("Coding2_Data2.csv")
+n = nrow(sim_df)
+
 # iterate, running each simulation 
 for (sim in 1:n_sims) {
+  # randomly split dataset
+  train_idx = sample(n, n*.75)
+  train_df = sim_df[train_idx, ]
+  test_df = sim_df[-train_idx, ]
   
+  model_full 		  = lm(Y ~ :, data = train_df)
+  model_ridge_min = lm(Y ~ :, data = train_df)
+  model_lasso_min = lm(Y ~ :, data = train_df)
+  model_l_refit	  = lm(Y ~ :, data = train_df)
+  model_pcr 		  = lm(Y ~ :, data = train_df)
   
 }
 
