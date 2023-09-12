@@ -295,10 +295,10 @@ stripchart(plot_df,
 ```
 
 ## Part c Answers: 
-1. The best MSPE performance is yielded by the ridge procedure. 
-2. The worst MSPE performance is yielded by the lasso 1se model.
-3. Lasso.min yields better performance.
-4. Refitting is slightly advantageous but the improvement is likely negligible.
+1. On average, the best MSPE performance is yielded by the ridge procedure. 
+2. On average, the worst MSPE performance is yielded by the lasso 1se model.
+3. Lasso.min yields better performance than Lasso.1se.
+4. For this study, refitting was slightly advantageous but the improvement is likely not statistically significant.
 5. Variable selection is not warranted for this dataset. The full linear model performs comparably to the downselected models. 
 
 # Part 2-2: Case II
@@ -342,6 +342,6 @@ stripchart(plot_df,
 ```
 
 ## Part c Answers: 
-1. Min lasso performs the best.
-2. PCR performs the poorest. 
-3. All models perform worse, however in particular PCR and ridge perform much more poorly. ~ADDITIONAL WORDS~ 
+1. On average, the best performance is yielded by the lasso with minimum gamma. 
+2. On average, the worst performance is yielded by the PCR model. 
+3. The simulation results reveal that on average, all models perform worse in Case II. This is likely because the models overfit on noise present in the training data. 
