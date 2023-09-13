@@ -1,0 +1,387 @@
+---
+title: "Coding Assignment 1"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmill3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+
+Program: MCS-DS\
+Team contributions:
+
+| Person         | Contribution                                |
+|----------------|---------------------------------------------|
+| Naomi Bhagat   | Part 1-1, 1-2, 1-3, 2-1, 2-2, 2-3, 3-1      |
+| Michael Miller | Part 4-1, 4-2, 5                            |
+| Joe May        | Part 1-1, 1-2, 1-3, 2-1, 2-2, 2-3, 3-1, 3-2 |
+
+# Part 1: Generate Data
+
+## Part 1-1
+
+First generate the 20 centers from two-dimensional normal. You can use any mean and covariance structure. You should not regenerate the centers. Use these 20 centers throughout this simulation study.
+
+```{r part1-1, eval = TRUE}
+# Set Seed
+set.seed(5245)
+
+# import necessary libraries
+library(class)
+
+csize = 10
+p = 2        
+s_centers = 1
+s_x = 1
+#s_x = sqrt(1/2); 
+
+m1 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(1.0,csize), rep(1.0,csize) )
+m0 = matrix(rnorm(csize*p), csize, p)*s_centers + cbind( rep(-1.0,csize), rep(-1.0,csize) )
+```
+
+## Part 1-2
+
+Given the 20 centers, generate a training sample of size 200 (100 from each class) and a test sample of size 10,000 (5,000 from each class).
+
+```{r part1-2, eval = TRUE}
+# Training sample of size 200
+n = 100
+id1 = sample(1:csize, n, replace=TRUE)
+id0 = sample(1:csize, n, replace=TRUE)  
+traindata = matrix(rnorm(2*n*p), 2*n, p)*s_x + rbind(m1[id1,], m0[id0,])
+dim(traindata)
+Ytrain = rep(c(1, 0), each = n)
+
+# Test sample of size 10,000
+
+N = 5000
+# Allocate the n samples for class 1  to the 10 clusters
+id1 = sample(1:csize, N, replace=TRUE)
+# Allocate the n samples for class 1 to the 10 clusters
+id0 = sample(1:csize, N, replace=TRUE)  
+testdata = matrix(rnorm(2*N*p), 2*N, p)*s_x + rbind(m1[id1,], m0[id0,])
+dim(testdata)
+Ytest = rep(c(1, 0), each = N)
+```
+
+## Part 1-3
+
+Produce a scatter plot of the training [[data:\\\\](data:){.uri}](%5Bdata:\%5D(data:)%7B.uri%7D){.uri} - assign different colors to the two classes of data points;\
+- overlay the 20 centers on this scatter plot, using a distinguishing marker (e.g., a star or a different shape) and color them according to their respective class.
+
+```{r part1-3, eval = TRUE}
+plot(traindata[,1], traindata[,2], type="n", xlab="", ylab="")
+points(traindata[1:n,1], traindata[1:n,2], col="green")
+points(traindata[(n+1):(2*n),1], traindata[(n+1):(2*n),2], col="red")
+points(m1[1:csize,1], m1[1:csize,2], pch="+", cex=1.5, col="green")
+points(m0[1:csize,1], m0[1:csize,2], pch="+", cex=1.5, col="red");   
+legend("bottomright", pch = c(1,1), col = c("red", "green"), legend = c("class 1", "class 0"))
+```
+
+# Part 2: kNN
+
+1.  Implement kNN from scratch; use Euclidean Distance. Your implementation should meet the following requirements:
+
+-   Input: Your kNN function should accept three input parameters: training data, test data, and k. No need to write your kNN function to handle any general input; it suffices to write a function that is able to handle the data for this specific simulation study: binary classification; features are two-dimensional numerical vectors.
+-   Output: Your function should return a vector of predictions for the test data.
+-   Vectorization: Efficiently compute distances between all test points and training points simultaneously. Make predictions for all test points in a single operation.
+-   No Loops: Do not use explicit loops like for or while inside your kNN function to compute distances or make predictions. Instead, harness the power of vectorized operations for efficient computations. For example, you can use broadcasting in Numpy or command outer in R.
+
+```{r part2-1, eval = TRUE}
+# Euclidean helper function
+euclidean_distance = function(point1, point2) {
+  if (length(point1) == length(point2)) {
+    return(sqrt(sum((point1 - point2)^2)))
+  } else {
+    stop('Vectors must be of the same length')
+  }
+}
+
+
+
+knn_from_scratch = function(train, test, truth, k) {
+  
+  expanded_test_data = matrix(rep(test,each = nrow(train)), ncol=2)
+  expanded_train_data = matrix(rep(t(train), times = nrow(test)), ncol=2, byrow = TRUE)
+  # Repeat test rows to subtract from corresponding training rows
+  
+  train_less_test = expanded_train_data - expanded_test_data
+  train_less_test_sum_squares = rowSums(train_less_test^2)
+  neighbor_distances = matrix(sqrt(train_less_test_sum_squares),nrow=nrow(test), byrow=TRUE)
+  # Take the sum of squares of the difference between test points from training points
+  # Uses vector functionality to calculate each point's distance to neighbors
+  
+  nearest_neighbor_address = function(j) {
+    nearest_unique = head(sort(unique(j)),k)
+    
+    get_nearest_indexes <- function(num) {
+      tie_index=which(j %in% num)
+      if(length(tie_index) > 1) {
+        return_idx = sample(tie_index,1)
+      } else {
+        return_idx = tie_index
+      }
+      return(return_idx)
+    }
+    
+    nearest_neighbors = sapply(nearest_unique, get_nearest_indexes)
+    return(nearest_neighbors)
+  }
+  # Function to get k nearest neighbors (temp variable j for k)
+  
+  neighborhood_votes = apply(neighbor_distances, 1, nearest_neighbor_address)
+  # Return address of each row's nearest neighbor
+  
+  neighborhood_votes_v = matrix(truth[neighborhood_votes], nrow=nrow(test), byrow=TRUE)
+  # Collect votes from nearest neighbor
+  
+  determine_winner = function(point){
+    if (sum(point) > k/2) {
+      return(1)
+    } else if (sum(point) < k/2) {
+      return(0)
+    } else {
+      return(sample(0:1, 1))
+    }
+  }
+  # Determine winner given votes of k nearest neighbors. Ties are broken randomly.
+  
+  predictions = apply(neighborhood_votes_v, 1, determine_winner)
+  return(predictions)
+}
+```
+
+2.  Explain how you handle distance ties and voting ties; distance ties may occur when you have multiple (training) observations that are equidistant from a test observation. voting ties may occur when K is an even number and you have 50% of the k-nearest-neighbors from each of the two classes.
+
+**If there are distance ties when determining nearest neighbors, one of the equidistant neighbors is selected at random for voting.**
+
+**If the number of votes for each point is the same, we have decided to randomly generate a class for that particular test point because the two classes at that point are equally as likely.**
+
+3.  Test your code with the training/test data you just generated when K = 1, 3, 5; and compare your results with knn in R or sklearn.neighbors in Python. Report your results (on the test data) as a 2-by-2 table (confusion matrix) for each K value. Report the results from knn or sklearn.neighbors as a 2-by-2 table (confusion matrix) for each K value
+
+```{r part2-3, eval = TRUE}
+# k = 1
+print("k = 1")
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=1)
+table(Ytest, baseline_test.pred)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=1)
+table(Ytest, implementation_test.pred)
+
+# k = 3
+print("k = 3")
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=3)
+table(Ytest, baseline_test.pred)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=3)
+table(Ytest, implementation_test.pred)
+
+# k = 5
+print("k = 5")
+baseline_test.pred = knn(traindata, testdata, Ytrain, k=5)
+table(Ytest, baseline_test.pred)
+implementation_test.pred = knn_from_scratch(traindata, testdata, Ytrain, k=5)
+table(Ytest, implementation_test.pred)
+```
+
+# Part 3: cvkNN
+
+## Part 3-1
+
+Implement KNN classification with K chosen by 10-fold cross-validation from scratch.\
+- Set the candidate K values from 1 to 180. (The maximum candidate K value is 180. Why?)\
+- From now on, you are allowed to use the built-in kNN function from R or Python instead of your own implementation from Part 2.\
+- It is possible that multiple K values give the (same) smallest CV error; when this happens, pick the largest K value among them, since the larger the K value, the simpler the model.
+
+We choose 180 as the max K value because there will be 180 samples in our training dataset.
+
+```{r part3-1, eval = TRUE}
+get_best_k = function(x, y) {
+  
+  # init variables for looping through k values
+  max_k = 180
+  fold_count = 10
+  k_values = 1:max_k
+  average_errors = rep(0, max_k)
+  fold_size = floor(nrow(x) / fold_count)
+  random_idx = sample(1:nrow(x))
+
+  # loop through values of k, for each, calculate n-fold cv error
+  for (k in k_values){
+    # cumulative error for averaging out at the end
+      error = 0
+      
+    for (fold in 1:fold_count){
+      # calculate the index for train/validate for this fold 
+      # do this by getting ordered idx (e.g. 1:10), then using that to get rand idx
+      ordered_val_idx = ((fold - 1) * fold_size + 1) : (fold * fold_size)
+      val_idx = random_idx[ordered_val_idx]
+      
+      # split data into train/val. Use negative index to exclude ones we don't want
+      fold_train_x = x[-val_idx, ]
+      fold_train_y = y[-val_idx]
+      fold_val_x = x[val_idx, ]
+      fold_val_y = y[val_idx]
+      
+      # Make prediction
+      fold_predicted_y = knn(fold_train_x, fold_val_x, fold_train_y, k=k)
+        
+      # Sum the error
+      error = error + sum(fold_predicted_y != fold_val_y)
+    }
+      
+    # Add error to array to track
+    average_errors[k] = error / fold_count
+  }
+  
+  # uncomment to debug
+  # plot(average_errors, xlab="k", ylab="Average error count", main="Error vs K")
+  
+  # Find lowest error (larger k breaks tie) which.max returns first, so reversing
+  # array will get us last
+  min_idx = length(average_errors) - which.min(rev(average_errors)) + 1
+  min_error = average_errors[min_idx]
+  best_k = k_values[min_idx]
+
+return(best_k)
+}
+```
+
+## Part 3-2
+
+Test your code with the training/test data you just generated. Report your results (on the test data) as a 2-by-2 table and also report the value of the selected K.
+
+```{r part3-2, eval = TRUE}
+# now train model using our preferred k
+best_k = get_best_k(traindata, Ytrain)
+predicted = knn(traindata, testdata, Ytrain, k=best_k)
+actual = Ytest
+print(table(actual, predicted))
+print(paste0("The value of the selected k is ", best_k))
+```
+
+The optimal value of k is `best_k`.
+
+# Part 4: Bayes rule
+
+Implement the Bayes rule. Your implementation should meet the following requirements: -Do not use explicit loops over the test sample size (10,000 or 5,000). -You are allowed to use loops over the number of centers (10 or 20), although you can avoid all loops.
+
+```{r part4-1, eval = TRUE}
+# now train model using our preferred k
+bayes_rule = function(x, s, m1, m0) {
+  # x = x values 
+  # s = sigma used to generate x
+  # m0 = means of class 0 (for each center)
+  # m1 - means of class 1 (for each center)
+  
+  # from assignment 1 (campuswire #36)
+  
+  # initialize variables for loop
+  center_count = nrow(m1)
+  numerator = rep(0, nrow(x))
+  denominator  = rep(0, nrow(x))
+  
+  # iterate through centers, and sum for each
+  for(center in 1:center_count){
+    current_m1 = m1[center, ]
+    current_m0 = m0[center, ]
+    
+    # get norm of each row
+    m1_norm = apply(x - current_m1, 1, function(row) sqrt(sum(row^2)))
+    m0_norm = apply(x - current_m0, 1, function(row) sqrt(sum(row^2)))
+    
+    # calculate numerator and denominator portions for each center
+    denominator = denominator + exp(-m0_norm / (2 * s^2))    
+    numerator = numerator + exp(-m1_norm / (2 * s^2))
+
+  }
+  
+  # return 1 if numerator is bigger else 0
+  return(as.numeric(numerator >= denominator))
+}
+```
+
+2.  Test your code with the test data you just generated. (Note that you do not need training data for the Bayes rule.) Report your results (on the test data) as a 2-by-2 table.
+
+```{r part4-2, eval = TRUE}
+# get prediction, output to table 
+predicted = bayes_rule(testdata, s_x, m1, m0)
+actual = Ytest
+print(table(actual, predicted))
+```
+
+# Part 5: Simluation Study
+
+Given the 20 centers generated in Part 1, repeatedly generate 50 training/test datasets (training size = 200 and test size = 10,000). For each pair of training/test datasets, calculate the test errors (the averaged 0/1 loss on the test data set) for each of the following three procedures:
+
+1.  kNN with K = 7 (you can use the built-in kNN function from R or Python);
+2.  kNN with K chosen by 10-fold CV (your implementation from Part 3); and
+3.  the Bayes rule (your implementation from Part 4).
+
+Present the test errors graphically, e.g., using a boxplot or strip chart (see below). Also, report the (min, max, median, 25% quantile, 75% quantile) for the 50 selected K values.
+
+```{r part5, eval = TRUE}
+# parameters for the simulation
+n_sims = 50
+n_train = 200
+n_test = 10000
+
+# initialize data collection 
+errors = matrix(0, nrow=n_sims, ncol=3)
+best_ks = rep(0, n_sims)
+
+# iterate, run each simulation
+for (sim in 1:n_sims) {
+  
+  #####  generate data #####
+  n = n_train/2
+  id1 = sample(1:csize, n, replace=TRUE)
+  id0 = sample(1:csize, n, replace=TRUE)  
+  train_x = matrix(rnorm(2*n*p), 2*n, p)*s_x + rbind(m1[id1,], m0[id0,])
+  train_y = rep(c(1, 0), each = n)
+
+  N = n_test/2
+  # Allocate the n samples for class 1  to the 10 clusters
+  id1 = sample(1:csize, N, replace=TRUE)
+  # Allocate the n samples for class 1 to the 10 clusters
+  id0 = sample(1:csize, N, replace=TRUE)  
+  test_x = matrix(rnorm(2*N*p), 2*N, p)*s_x + rbind(m1[id1,], m0[id0,])
+  test_y = rep(c(1, 0), each = N)
+  
+  #####  run the models #####
+  # knn with K  7
+  predicted_y_knn7 = knn(train_x, test_x, train_y, k=7)
+  
+  # knn with best k
+  best_k = get_best_k(train_x, train_y)
+  predicted_y_knn_best = knn(train_x, test_x, train_y, k=best_k)
+ 
+  # bayes 
+  predicted_y_bayes = bayes_rule(test_x, s_centers, m1, m0)
+  
+  #####  store output data #####
+  errors[sim, 1] = sum(predicted_y_knn7 != test_y) / n_test
+  errors[sim, 2] = sum(predicted_y_knn_best != test_y) / n_test
+  errors[sim, 3] = sum(predicted_y_bayes != test_y) / n_test
+  best_ks[sim] = best_k
+}
+
+boxplot(errors, 
+        main = 'Model Error for 50-iteration Simulation Study',
+        xlab = 'Model',
+        ylab = 'Error rate',
+        names = c('kNN, k = 7', 'kNN, Optimal k', 'Bayes rule')
+        )
+```
+
+## Statistics for optimal K-values
+
+```{r part5-2, eval = TRUE}
+print(summary(best_ks))
+```
