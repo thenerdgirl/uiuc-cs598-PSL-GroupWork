@@ -5,7 +5,6 @@ author: "Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May - jemay3"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   pdf_document:
-    toc: yes
 urlcolor: cyan
 ---
 
