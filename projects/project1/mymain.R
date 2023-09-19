@@ -23,3 +23,19 @@
 # – Step 2: Preprocess test data, then save predictions into two files: mysubmission1.txt and
 # mysubmission2.txt. (The specific format for these files is detailed below.)
 # ∗ Note: At this step, you are strictly not allowed to access the training data
+
+clean_data = function(in_df) { 
+  # in_df - dataframe matching format of Ames housing dataset
+  # note that this function must work with dataframes but including and excluding the 
+  # column Sale_Price
+  
+  #TODO: Implement me! 
+  out_df = in_df
+  
+  return(out_df)
+  }
+
+
+
+
+
