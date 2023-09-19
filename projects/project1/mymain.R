@@ -49,7 +49,7 @@ get_rmse = function(y_pred, y_actual) {
   
   n = length(y_actual)
   
-  inner_sum = sum((y_actual - y_pred)^2)
+  inner_sum = sum((log(y_actual) - log(y_pred))^2)
   total = sqrt(1/n * inner_sum)
   
   return(total)
