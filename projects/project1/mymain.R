@@ -12,7 +12,7 @@
 DEBUG = TRUE 
 
 # use this to select which fold to use (debug only)
-fold_num = 2
+fold_num = 3
 
 
 clean_data = function(in_df) { 
@@ -32,20 +32,35 @@ clean_data = function(in_df) {
   return(out_df)
   }
 
-print_formatted = function(df, file=file_name) {
+print_formatted = function(pred, idx, file_name) {
+  
+  out_df = data.frame(PID=idx, Sale_Price=pred)
+  
   # format output per guidance 
-  write.table(df,
-              file=file, 
+  write.table(out_df,
+              file=file_name, 
               row.names=FALSE, 
               quote=FALSE, 
               sep = ",  ")
   }
+
+get_rmse = function(y_pred, y_actual) {
+  # implement per assignment instructions 
+  
+  n = length(y_actual)
+  
+  inner_sum = sum((y_actual - y_pred)^2)
+  total = sqrt(1/n * inner_sum)
+  
+  return(total)
+}
 
 ############## BEGIN SCRIPT BODY ############## 
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
 #######  load libraries  ####### 
 library(glmnet)
+library(randomForest)
 
 
 #######  load data  ####### 
@@ -63,43 +78,43 @@ if(DEBUG) {
 train = clean_data(train)
 test_x = clean_data(test_x)
 
-####### train models ####### 
+####### train models and evaluate #######
+test_idx = test_x$PID
 
-
-
-# model 1 is linear model with ridge penalty, using min lambda 
+### model 1 is linear model with ridge penalty, using min lambda 
 
 # suggested lambda sequence to increase performance
 lambdas = exp(seq(-10, 1, length.out = 100))
 
-# get rid of first and last column
-train_x = makeX(train[, -c(1, ncol(df))])
+# inputs need to be two matrices
+train_x_mat = as.matrix(train[, -c(2, ncol(train))])
+test_x_mat = as.matrix(test_x[, -1])
 train_y = train[, ncol(train)]
 
-model_ridge = cv.glmnet(train_x, train_y, alpha = 0, lambda = lambdas)
+model_ridge = cv.glmnet(train_x_mat, train_y, alpha=0, lambda=lambdas)
 
-predictions = as.vector(predict(model_ridge, s = model_ridge$lambda.min, newx = test_x))
-results[sim, 2] = mean((test_y - predictions)^2)
+y_ridge = as.vector(predict(model_ridge, s=model_ridge$lambda.min, newx=test_x_mat))
 
-# model 2 is randomForest 
-model_rf = randomForest(y ~ ., data = train_data, ntree = 100)
+###  model 2 is randomForest 
+model_rf = randomForest(Sale_Price ~ ., data=train[, -1], ntree = 100)
 
-
-#######  get predictions
-pred1 = test_y
-pred2 = test_y
+y_rf = as.vector(predict(model_rf, newdata=test_x))
 
 #######  evaluate 
 if(DEBUG) {
+  # first, only get the y values we actually used
+  y_actual = subset(test_y, PID %in% test_idx)$Sale_Price
   
+  rmse_ridge = get_rmse(y_ridge, y_actual)
+  rmse_rf = get_rmse(y_rf, y_actual)
   
-  
+  sprintf('RMSE for ridge model for fold %d is %.2f', fold_num, rmse_ridge)
+  sprintf('RMSE for random forrest model for fold %d is %.2f', fold_num, rmse_rf)
 }
 
-
 #######  write output
-print_formatted(pred1, file='mysubmission1.txt')
-write.csv(pred2, file='mysubmission2.txt')
+print_formatted(y_ridge, test_idx, 'mysubmission1.txt')
+print_formatted(y_rf, test_idx, 'mysubmission2.txt')
 
 
 
