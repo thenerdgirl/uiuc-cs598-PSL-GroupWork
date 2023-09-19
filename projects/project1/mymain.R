@@ -10,10 +10,9 @@
 
 # TODO set this to FALSE before submitting 
 DEBUG = TRUE 
-if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
 # use this to select which fold to use (debug only)
-fold_num = 1
+fold_num = 2
 
 
 clean_data = function(in_df) { 
@@ -22,7 +21,13 @@ clean_data = function(in_df) {
   # column Sale_Price
   
   #TODO: Implement me! 
-  out_df = in_df
+  
+  #temp, drop non-numeric columns
+  numeric_columns = sapply(in_df, function(x) is.integer(x) || is.numeric(x))
+  out_df = in_df[, numeric_columns]
+  
+  #temp, drop any columns with missing values 
+  out_df =  out_df[complete.cases(out_df), ]
   
   return(out_df)
   }
@@ -36,7 +41,14 @@ print_formatted = function(df, file=file_name) {
               sep = ",  ")
   }
 
-# load data
+############## BEGIN SCRIPT BODY ############## 
+if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
+
+#######  load libraries  ####### 
+library(glmnet)
+
+
+#######  load data  ####### 
 if(DEBUG) {
   file_dir =  paste0('fold', as.character(fold_num))
   test_x = read.csv(paste0(file_dir, '/test.csv'))
@@ -47,19 +59,45 @@ if(DEBUG) {
   train = read.csv(paste0('train.csv'))
 }
   
-# clean data
+#######  clean data  ####### 
 train = clean_data(train)
 test_x = clean_data(test_x)
 
-# train models
+####### train models ####### 
 
-# get predictions
+
+
+# model 1 is linear model with ridge penalty, using min lambda 
+
+# suggested lambda sequence to increase performance
+lambdas = exp(seq(-10, 1, length.out = 100))
+
+# get rid of first and last column
+train_x = makeX(train[, -c(1, ncol(df))])
+train_y = train[, ncol(train)]
+
+model_ridge = cv.glmnet(train_x, train_y, alpha = 0, lambda = lambdas)
+
+predictions = as.vector(predict(model_ridge, s = model_ridge$lambda.min, newx = test_x))
+results[sim, 2] = mean((test_y - predictions)^2)
+
+# model 2 is randomForest 
+model_rf = randomForest(y ~ ., data = train_data, ntree = 100)
+
+
+#######  get predictions
 pred1 = test_y
 pred2 = test_y
 
-# evaluate 
+#######  evaluate 
+if(DEBUG) {
+  
+  
+  
+}
 
-# write output
+
+#######  write output
 print_formatted(pred1, file='mysubmission1.txt')
 write.csv(pred2, file='mysubmission2.txt')
 
