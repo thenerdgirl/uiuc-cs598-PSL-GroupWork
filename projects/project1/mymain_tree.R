@@ -1,6 +1,6 @@
 # Project 1
 # CS598 Practical Statistical Learning
-# Naomi Brhagat - nbhgat3
+# Naomi Bhagat - nbhagat3
 # Michael Miller - msmille3
 # Joe May - jemay3
 # 9/17/2023
@@ -10,6 +10,7 @@
 
 library(glmnet)
 library(randomForest)
+library(xgboost)
 
 # TODO set this to FALSE before submitting 
 DEBUG = TRUE 
@@ -36,6 +37,9 @@ clean_data_tree = function(df_in) {
   
   # zero out the Garage Year Built missing data
   df_in$Garage_Yr_Blt[is.na(df_in$Garage_Yr_Blt)] = 0
+  
+  # drop missing values
+  df_in = df_in[complete.cases(df_in), ]
 
   return(df_in)
 }
