@@ -46,6 +46,7 @@ clean_data_tree = function(df_in) {
 
 for (fold_num in 1:10) {
   ### Train Model ###
+  
   # TODO switch from DEBUG mode at some point
   file_dir =  paste0('fold', as.character(fold_num))
   test_x = read.csv(paste0(file_dir, '/test.csv'))
@@ -57,7 +58,15 @@ for (fold_num in 1:10) {
   
   # Tree model
   set.seed(235)
+  
+  # start time, train model, stop time 
+  time_start = Sys.time()
   model_rf = randomForest(Sale_Price ~ ., data=train_tree[, -1], ntree = 100)
+  time_stop = Sys.time()
+  
+  # print elapsed time
+  elapsed_seconds = as.numeric(difftime(time_stop, time_start, units = "secs"))
+  sprintf('Train computation time: %.3f s', elapsed_seconds)
   
   ### Test Prediction Output ###
   # Same pre-processing
@@ -78,6 +87,7 @@ for (fold_num in 1:10) {
   
   # rmse_ridge
   print(rmse_rf)
+  
 }
 
 

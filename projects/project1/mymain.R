@@ -59,9 +59,17 @@ get_rmse = function(y_pred, y_actual) {
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
 #######  load libraries  ####### 
-library(glmnet)
-library(randomForest)
 
+# packages to load
+packages = c('glmnet', 'randomForest', 'xgboost')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
 
 #######  load data  ####### 
 if(DEBUG) {
@@ -115,9 +123,3 @@ if(DEBUG) {
 #######  write output
 print_formatted(y_ridge, test_idx, 'mysubmission1.txt')
 print_formatted(y_rf, test_idx, 'mysubmission2.txt')
-
-
-
-
-
-
