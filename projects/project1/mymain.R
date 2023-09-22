@@ -8,6 +8,18 @@
 # Campuswire post: https://campuswire.com/c/G06C55090/feed/193
 # PDF instructions https://liangfgithub.github.io/Proj/F23_Proj1.pdf
 
+#######  load libraries  ####### 
+# packages to load
+packages = c('glmnet', 'randomForest', 'xgboost')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
 # TODO set this to FALSE before submitting 
 DEBUG = TRUE 
 
@@ -57,19 +69,6 @@ get_rmse = function(y_pred, y_actual) {
 
 ############## BEGIN SCRIPT BODY ############## 
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
-
-#######  load libraries  ####### 
-
-# packages to load
-packages = c('glmnet', 'randomForest', 'xgboost')
-
-# if packages don't exist, install. Then call library on them
-for (package in packages) {
-  if (!requireNamespace(package, quietly=TRUE)) {
-    install.packages(package)
-  }
-  library(package, character.only=TRUE)
-}
 
 #######  load data  ####### 
 if(DEBUG) {
