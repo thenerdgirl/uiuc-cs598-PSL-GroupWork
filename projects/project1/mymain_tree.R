@@ -62,6 +62,15 @@ for (fold_num in 1:10) {
   # start time, train model, stop time 
   time_start = Sys.time()
   model_rf = randomForest(Sale_Price ~ ., data=train_tree[, -1], ntree = 100)
+  
+  # TODO someone please test this???
+  model_xgboost = xgboost(data = train_tree,
+                          label = train_y,
+                          max_depth = 6,
+                          eta = 0.05,
+                          nthread = 2,
+                          nrounds = 500)
+  
   time_stop = Sys.time()
   
   # print elapsed time
