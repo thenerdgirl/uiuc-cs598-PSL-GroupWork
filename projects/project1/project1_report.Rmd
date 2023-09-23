@@ -33,6 +33,60 @@ For instance, when documenting your pre-processing steps, provide specifics such
 - You’re not required to justify these pre-processing decisions; just state what was done.
 When documenting implementation, general statements like “We use lasso to fit a sparse regression model” are insufficient. Instead, aim for detailed descriptions, such as: “We utilized lasso for regression modeling. Specifically, we employed the glmnet function in R with the data standardized and with lambda set to lambda.min.”
 
+--> For this assignment, we created two models: a linear-based modeland a tree-based model. The following sections go into deeper details about our design choices.
+
+## Linear Model
+
+There were several pre-processing steps necessary for the linear model. First, we remove the PID element as a feature, 
+because is is simply an indentification metirc and has no weight towards the estimated Sale Price of any given house, 
+and is therefore useless for training purposes. We also went ahead and replaced NULL or missing values in the "Garage 
+Year Built" column, as it was the only column in the data with missing values. Next, we removed a set of imbalanced
+categorical variables, and variables that don't offer additional insights. The following et of variables was removed:
+
+- Street
+- Utilities
+- Condition_2
+- Roof_Matl
+- Heating
+- Pool_QC
+- Misc_Feature
+- Low_Qual_Fin_SF
+- Pool_Area
+- Longitude
+- Latitude
+
+The next pre-processing step was Winsorization. Because the impact of some of the area-related variables need a ceiling,
+we calculated the 95% upper quantile of the chosen variables based on the training data, and any value in both the 
+training and test datasets that exceeds this value is replaced with that value, effectively capping the possibe values 
+in the feature at this 95% quantile value. The winsorized variables include:
+
+- Lot_Frontage
+- Lot_Area
+- Mas_Vnr_Area
+- BsmtFin_SF_2
+- Bsmt_Unf_SF
+- Total_Bsmt_SF
+- Second_Flr_SF
+- First_Flr_SF
+- Gr_Liv_Area
+- Garage_Area
+- Wood_Deck_SF
+- Open_Porch_SF
+- Enclosed_Porch
+- Three_season_porch
+- Screen_Porch
+- Misc_Val
+
+TODO insert more about the pre-processing here and describe the model. 
+
+## Tree Model
+
+Similar to the linear model, separate pre-processing was done on the data for the tree model. First, we remove the PID
+element as a feature, because is is simply an indentification metirc and has no weight towards the estimated Sale Price 
+of any given house, and is therefore useless for training purposes. We also went ahead and replaced NULL or missing 
+values in the "Garage Year Built" column, as it was the only column in the data with missing values. Finally, we simply
+dropped all additional columns that were missing values for a more complete set of training data.
+
 # Section 2: Performance Metrics
 
 Report the accuracy of your models on the test data (refer to the provided evaluation metric below), the execution time of your code, and details of the computer system you used (e.g., Macbook Pro, 2.53 GHz, 4GB memory or AWS t2.large) for all 10 training/test splits.
