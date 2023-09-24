@@ -45,9 +45,6 @@ clean_all = function(in_df) {
 clean_linear = function(df_in) {
   # specific cleaning steps for linear model
   
-  # Remove the PID as a variable
-  df_in = subset(df_in, select = -PID)
-  
   # zero out the Garage Year Built missing data
   df_in$Garage_Yr_Blt[is.na(df_in$Garage_Yr_Blt)] = 0
   
@@ -86,6 +83,16 @@ clean_linear = function(df_in) {
   return(df_out)
 }
 
+clean_tree = function(df_in) {
+  # zero out the Garage Year Built missing data
+  df_in$Garage_Yr_Blt[is.na(df_in$Garage_Yr_Blt)] = 0
+  
+  # drop missing values
+  df_in = df_in[complete.cases(df_in), ]
+  
+  return(df_in)
+}
+
 print_formatted = function(pred, idx, file_name) {
   
   out_df = data.frame(PID=idx, Sale_Price=pred)
@@ -114,30 +121,31 @@ train_and_eval = function(test_x, train, train_y) {
   # if train_y is not null, prints metrics to screen
   # if train_y is null. does not evaluate and instead prints output to file
   
-  # clean data
-  train = clean_all(train)
-  test_x = clean_all(test_x)
+  ############ LINEAR MODEL  ############ 
+  train_linear = clean_linear(train)
+  test_x_linear = clean_linear(test_x)
+  test_idx_linear = test_x_linear$PID
   
-  test_idx = test_x$PID
+  # inputs need to be matrices 
+  train_x_mat = as.matrix(train_linear[ ,2:(ncol(train_linear)-1)]) # omit PID and price
+  train_y = train_linear[, ncol(train_linear)] # price only
+  test_x_mat = as.matrix(test_x_linear[ ,2:ncol(test_x_linear)]) # omit PID
   
-  # suggested lambda sequence to increase performance
-  lambdas = exp(seq(-10, 1, length.out = 100))
-  
-  # inputs need to be two matrices
-  train_x_mat = as.matrix(train[, -c(2, ncol(train))])
-  test_x_mat = as.matrix(test_x[, -1])
-  train_y = train[, ncol(train)]
-  
-  # train and time linear model
+  # temp model to get optimal <something>
   start_linear = Sys.time()
-  model_linear = cv.glmnet(train_x_mat, train_y, alpha=0, lambda=lambdas)
+  temp_model = cv.glmnet(train_x_mat, train_y, alpha=1)
+  selected_vars = predict(temp_model, type="nonzero", s=temp_model$lambda.min)$s1
+  
+  # actual model for eval 
+  model_linear = cv.glmnet(train_x_mat[, selected_vars], train_y, alpha=0)
   stop_linear = Sys.time()
   
   time_linear = as.numeric(difftime(stop_linear, start_linear, units = "secs"))
   
   # get outputs for linear model 
-  y_linear = as.vector(predict(model_linear, s=model_linear$lambda.min, newx=test_x_mat))
+  y_linear = as.vector(predict(model_linear, s=model_linear$lambda.min, newx=test_x_mat[, selected_vars]))
   
+  ############ TREE MODEL  ############   
   # train and time tree model
   start_tree = Sys.time()
   model_tree = randomForest(Sale_Price ~ ., data=train[, -1], ntree = 100)
