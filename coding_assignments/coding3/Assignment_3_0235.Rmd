@@ -1,0 +1,29 @@
+---
+title: "Coding Assignment 2"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   |  |
+| Michael Miller |  |
+| Joe May        |  |
+
+Assignment URL: [campuswire post]()
+
+# Part 1: Optimal Span for LOESS
+
