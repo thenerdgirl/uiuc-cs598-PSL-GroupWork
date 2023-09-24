@@ -25,6 +25,60 @@ DEBUG = TRUE
 
 set.seed(235)
 
+# dataset constants for cleaning
+winsor_vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", 
+                "BsmtFin_SF_2", "Bsmt_Unf_SF", "Total_Bsmt_SF", 
+                "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", 
+                "Garage_Area", "Wood_Deck_SF", "Open_Porch_SF", 
+                "Enclosed_Porch", "Three_season_porch", 
+                "Screen_Porch", "Misc_Val")
+
+nominals = c('MS_Zoning',
+             'Neighborhood')
+
+nominal_vals = I(list(c('Agriculture',
+                        'Commercial',
+                        'Floating Village Residential',
+                        'Industrial',
+                        'Residential High Density',
+                        'Residential Low Density',
+                        'Residential Low Density Park ',
+                        'Residential Medium Density'),
+                      c('Bloomington Heights', 
+                        'Bluestem', 
+                        'Briardale', 
+                        'Brookside', 
+                        'Clear Creek', 
+                        'College Creek', 
+                        'Crawford', 
+                        'Edwards', 
+                        'Gilbert', 
+                        'Greens', 
+                        'Green Hills', 
+                        'Iowa DOT and Rail Road', 
+                        'Landmark', 
+                        'Meadow Village', 
+                        'Mitchell', 
+                        'North Ames', 
+                        'Northridge', 
+                        'Northpark Villa', 
+                        'Northridge Heights', 
+                        'Northwest Ames', 
+                        'Old Town', 
+                        'South & West of Iowa State University', 
+                        'Sawyer', 
+                        'Sawyer West', 
+                        'Somerset', 
+                        'Stone Brook', 
+                        'Timberland', 
+                        'Veenker')
+                      ))
+
+nominal_df = data.frame(name=nominals, options=nominal_vals)
+
+#replace spaces with underscores for nominals
+nominal_df$options <- lapply(nominal_df$options, function(vec) {gsub(" ", "_", vec)})
+
 clean_all = function(df_in) {
   # shared cleaning, to be called by clean_linear and clean_tree
   
@@ -35,8 +89,6 @@ clean_all = function(df_in) {
   
   return(df_out)
 }
-
-
 
 clean_linear = function(df_in) {
   # specific cleaning steps for linear model
@@ -49,37 +101,45 @@ clean_linear = function(df_in) {
   df_in = df_in[ , -which(names(df_in) %in% vars_to_remove)]
   
   # 95% winsorization
-  winsor_vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area", "BsmtFin_SF_2", "Bsmt_Unf_SF", "Total_Bsmt_SF", "Second_Flr_SF", 'First_Flr_SF', "Gr_Liv_Area", "Garage_Area", "Wood_Deck_SF", "Open_Porch_SF", "Enclosed_Porch", "Three_season_porch", "Screen_Porch", "Misc_Val")
   for(var in winsor_vars){
     tmp = df_in[ , var]
     quan_val = quantile(tmp, probs = 0.95, na.rm = TRUE)
     tmp[tmp > quan_val] = quan_val
-    df_in[ , var] = tmp
+    #df_in[ , var] = tmp
   }
-  
-  # the k stuff??
 
-#  categorical_vars = colnames(df_in)[which(sapply(df_in, function(x) mode(#x)=="character"))]
-#  df_out = df_in[, !colnames(df_in) %in% categorical_vars, drop=FALSE]
-#  n_train = nrow(df_out)
-#  
-#  for(var in categorical_vars){
-#    mylevels = sort(unique(df_in[, var]))
-#    m = length(mylevels)
-#    m = ifelse(m>2, m, 1)
-#    tmp.train = matrix(0, n_train, m)
-#    col.names = NULL
-#    for(j in 1:m){
-#      tmp.train[df_in[, var]==mylevels[j], j] = 1
-#      col.names = c(col.names, paste(var, '_', mylevels[j], sep=''))
-#    }
-#    colnames(tmp.train) = col.names
-#    df_out = cbind(df_out, tmp.train)
-#  }
+  # the k stuff??
+  
+  # handle nominals 
+  # iterate through the nominals we listed out
+  for (i in 1:nrow(nominal_df)) {
+    # we need a new column for each value in each nominal
+    row = nominal_df[i, ]
+    name = row$name
+    temp_columns = matrix(0, nrow(df_in), length(row$options[[1]]))
+    col_names = vector('character', length=length(row$options[[1]]))
+    
+    # iterate through options 
+    for (j in 1:length(row$options[[1]])) {
+      option = row$options[[1]][j]
+      
+      # temp column should be true if the value is equal to this options
+      temp_columns[df_in[, name]==option, j] = 1
+      col_names[j] = paste(name, '_', option, sep='')
+    }
+    
+    colnames(temp_columns) = col_names
+    df_in = cbind(df_in, temp_columns)
+  }
   
   numeric_columns = sapply(df_in, function(x) is.integer(x) || is.numeric(x))
   out_df = df_in[, numeric_columns]
   
+  # if there is Sale_Price , put it back at the end
+  if ("Sale_Price" %in% names(out_df)) {
+    order = c(names(out_df)[names(out_df) != "Sale_Price"], "Sale_Price")
+    out_df = out_df[, order]
+  }
   return(out_df)
 }
 
@@ -99,6 +159,8 @@ clean_tree = function(df_in) {
 print_formatted = function(pred, idx, file_name) {
   
   out_df = data.frame(PID=idx, Sale_Price=pred)
+  
+  out_df$Sale_Price = round(out_df$Sale_Price, 1)
   
   # format output per guidance 
   write.table(out_df,
