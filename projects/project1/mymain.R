@@ -114,14 +114,11 @@ train_and_eval = function(test_x, train, train_y) {
   # if train_y is not null, prints metrics to screen
   # if train_y is null. does not evaluate and instead prints output to file
   
-  #######  clean data  ####### 
+  # clean data
   train = clean_all(train)
   test_x = clean_all(test_x)
   
-  ####### train models and evaluate #######
   test_idx = test_x$PID
-  
-  ### model 1 is linear model with ridge penalty, using min lambda 
   
   # suggested lambda sequence to increase performance
   lambdas = exp(seq(-10, 1, length.out = 100))
@@ -131,30 +128,45 @@ train_and_eval = function(test_x, train, train_y) {
   test_x_mat = as.matrix(test_x[, -1])
   train_y = train[, ncol(train)]
   
-  model_ridge = cv.glmnet(train_x_mat, train_y, alpha=0, lambda=lambdas)
+  # train and time linear model
+  start_linear = Sys.time()
+  model_linear = cv.glmnet(train_x_mat, train_y, alpha=0, lambda=lambdas)
+  stop_linear = Sys.time()
   
-  y_ridge = as.vector(predict(model_ridge, s=model_ridge$lambda.min, newx=test_x_mat))
+  time_linear = as.numeric(difftime(stop_linear, start_linear, units = "secs"))
   
-  ###  model 2 is randomForest 
-  model_rf = randomForest(Sale_Price ~ ., data=train[, -1], ntree = 100)
+  # get outputs for linear model 
+  y_linear = as.vector(predict(model_linear, s=model_linear$lambda.min, newx=test_x_mat))
   
-  y_rf = as.vector(predict(model_rf, newdata=test_x))
+  # train and time tree model
+  start_tree = Sys.time()
+  model_tree = randomForest(Sale_Price ~ ., data=train[, -1], ntree = 100)
+  stop_tree = Sys.time()
+  
+  time_tree = as.numeric(difftime(stop_tree, start_tree, units = "secs"))
+  
+  y_tree = as.vector(predict(model_tree, newdata=test_x))
   
   #######  evaluate 
   if(is.null(train_y)) {
     # print output to file 
-    print_formatted(y_ridge, test_idx, 'mysubmission1.txt')
-    print_formatted(y_rf, test_idx, 'mysubmission2.txt')
+    print_formatted(y_linear, test_idx, 'mysubmission1.txt')
+    print_formatted(y_tree, test_idx, 'mysubmission2.txt')
   } else {
     # print metrics 
     
     # first, only get the y values we actually used
     y_actual = subset(test_y, PID %in% test_idx)$Sale_Price
     
-    rmse_ridge = get_rmse(y_ridge, y_actual)
-    rmse_rf = get_rmse(y_rf, y_actual)
+    rmse_linear = get_rmse(y_linear, y_actual)
+    rmse_tree = get_rmse(y_tree, y_actual)
     
-    cat(sprintf('%d\t%.3f\t%.3f\t%.3f\t%.3f\t\n',fold_num, rmse_ridge, rmse_rf, 4, 5 ))
+    cat(sprintf('%d\t%.3f\t%.3f\t%.3f\t%.3f\t\n',
+                fold_num, 
+                rmse_linear, 
+                rmse_tree, 
+                time_linear, 
+                time_tree ))
   }
 }
 
