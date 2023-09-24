@@ -1,6 +1,6 @@
 # Project 1
 # CS598 Practical Statistical Learning
-# Naomi Brhagat - nbhgat3
+# Naomi Bhagat - nbhagat3
 # Michael Miller - msmille3
 # Joe May - jemay3
 # 9/17/2023
@@ -105,11 +105,9 @@ clean_linear = function(df_in) {
     tmp = df_in[ , var]
     quan_val = quantile(tmp, probs = 0.95, na.rm = TRUE)
     tmp[tmp > quan_val] = quan_val
-    #df_in[ , var] = tmp
+    df_in[ , var] = tmp
   }
 
-  # the k stuff??
-  
   # handle nominals 
   # iterate through the nominals we listed out
   for (i in 1:nrow(nominal_df)) {
