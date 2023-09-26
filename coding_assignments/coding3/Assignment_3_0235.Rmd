@@ -69,19 +69,19 @@ Span Value Iteration:
 ```{r part1-2, eval = TRUE}
 span_value_iter = function(x, y, span) {
   n = length(x)
-  spans = length(span)
+  num_span = length(span)
   
   # return value vectors
-  cv = rep(0, spans)
-  gcv = rep(0, spans)
+  cv = rep(0, num_span)
+  gcv = rep(0, num_span)
   
   # Iterate over the span values
-  for(s in 1:spans) {
+  for(s in 1:num_span) {
     # For each span, calculate cv and gcv values
     # First, fit the loess model
-    fit = loess(y ~ x, span=s)
+    fit = loess(y ~ x, span=span[s], control=loess.control(surface="direct"))
     residuals = fit$residuals
-    d = get_diag(x, s)
+    d = get_diag(x, span[s])
     
     # intermediate calculations for cv and gcv
     # https://liangfgithub.github.io/Notes/lec_W5_NonlinearRegression.pdf slide 33
@@ -134,10 +134,10 @@ lines(fx, fy, col="red")
 
 # My curve - cv
 cv_f = loess(y ~ x, part1_data, span=cv_opt)
-lines(fx, predict(cv_f, data.frame(x = fx)), lty=2, col="blue")
+lines(fx, predict(cv_f, data.frame(x = fx)), lty=2, col="green")
 
 # My curve - gcv
 gcv_f = loess(y ~ x, part1_data, span=gcv_opt)
-lines(fx, predict(gcv_f, data.frame(x = fx)), lty=2, col="green")
+lines(fx, predict(gcv_f, data.frame(x = fx)), lty=2, col="blue")
 ```
 
