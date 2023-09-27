@@ -196,7 +196,7 @@ train_and_eval = function(test_x_raw, train_raw, test_y) {
     rmse_linear = get_rmse(y_linear, y_actual)
     rmse_tree = get_rmse(y_tree, y_actual)
     
-    cat(sprintf('%d\t%.3f\t%.3f\t%.3f\t%.3f\t\n',
+    cat(sprintf('%d\t%.4f\t%.4f\t%.3f\t%.3f\t\n',
                 fold_num, 
                 rmse_linear, 
                 rmse_tree, 
