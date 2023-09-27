@@ -20,7 +20,6 @@ for (package in packages) {
   library(package, character.only=TRUE)
 }
 
-# TODO set this to FALSE before submitting 
 DEBUG = FALSE 
 
 set.seed(235)
@@ -151,7 +150,7 @@ train_and_eval = function(test_x_raw, train_raw, test_y) {
   test_x_mat = as.matrix(test[ ,2:(ncol(test)-1)]) # omit PID and price
   
   ############ LINEAR MODEL  ############
-  # temp model to get optimal <something>
+  # temp model to get optimal set of variables
   start_linear = Sys.time()
   temp_model = cv.glmnet(train_x_mat, train_y, alpha=1)
   selected_vars = predict(temp_model, type="nonzero", s=temp_model$lambda.min)$s1

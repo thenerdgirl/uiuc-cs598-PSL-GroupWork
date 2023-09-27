@@ -18,7 +18,7 @@ Team contributions:
 
 | Person         | Contribution                                |
 |----------------|---------------------------------------------|
-| Naomi Bhagat   |                                             |
+| Naomi Bhagat   | Data pre-procesing, traning/testing general process, report Section 1 |
 | Michael Miller |                                             |
 | Joe May        |                                             |
 
@@ -35,13 +35,16 @@ When documenting implementation, general statements like “We use lasso to fit 
 
 --> For this assignment, we created two models: a linear-based modeland a tree-based model. The following sections go into deeper details about our design choices.
 
-## Linear Model
+## Pre-Processing
 
-There were several pre-processing steps necessary for the linear model. First, we remove the PID element as a feature, 
-because is is simply an indentification metirc and has no weight towards the estimated Sale Price of any given house, 
-and is therefore useless for training purposes. We also went ahead and replaced NULL or missing values in the "Garage 
-Year Built" column, as it was the only column in the data with missing values. Next, we removed a set of imbalanced
-categorical variables, and variables that don't offer additional insights. The following et of variables was removed:
+The first step we took for this project was to clean up the data with some data pre-processing steps. The pre-processing 
+steps described in this section are common between the linear and tree models that were built.
+
+There were several pre-processing steps necessary for the linear model. First, we replaced NULL or missing values in the
+"Garage Year Built" column, as it was the only column in the data with missing values. Next, we removed a set of 
+imbalanced categorical variables, and variables that don't offer additional insights. Most of these variables are highly 
+biased, meaning that the entries for these vairables skew heavily in favor of one categry rather than a more normal 
+distribution. The following is the set of removed variables:
 
 - Street
 - Utilities
@@ -77,16 +80,27 @@ in the feature at this 95% quantile value. The winsorized variables include:
 - Screen_Porch
 - Misc_Val
 
-TODO insert more about the pre-processing here and describe the model. 
+Next, we converted our remaining categorical variables into 1-hot vectors. TODO @Michael or @Joe describe this more in detail please!! Also explain the final step about adding Sale Price back in.
+
+## Linear Model
+
+After running the training data through the described pre-processing, we created our linear model. First, we trained an 
+initial model using glmnet. The sole purpose of this model is to get the most optimal set of variables to use for 
+prediction purposes. Then, using only this set of selected variables from the intial model, we created a second glmnet 
+model which is then used to make the final prediction on the test data.
+
+@Michael, @Joe - maybe add some challenges here? Talk about the forcing of columns to be the same between train and test?
 
 ## Tree Model
 
-Similar to the linear model, separate pre-processing was done on the data for the tree model. First, we remove the PID
-element as a feature, because is is simply an indentification metirc and has no weight towards the estimated Sale Price 
-of any given house, and is therefore useless for training purposes. We also went ahead and replaced NULL or missing 
-values in the "Garage Year Built" column, as it was the only column in the data with missing values. Finally, we simply
-dropped all additional columns that were missing values for a more complete set of training data.
+For our tree model, we initially tried using a randomForest, bt no matter how muh we tweaked the model, we were not 
+getting good results on the 10 splits. Therefore, we switched to using an xgboost model, largely using trial and error 
+to determine which model was the most optimal for our purposes.
 
 # Section 2: Performance Metrics
 
-Report the accuracy of your models on the test data (refer to the provided evaluation metric below), the execution time of your code, and details of the computer system you used (e.g., Macbook Pro, 2.53 GHz, 4GB memory or AWS t2.large) for all 10 training/test splits.
+Report the accuracy of your models on the test data (refer to the provided evaluation metric below), the execution time 
+of your code, and details of the computer system you used (e.g., Macbook Pro, 2.53 GHz, 4GB memory or AWS t2.large) for 
+all 10 training/test splits.
+
+@Joe, @Michael - this section is all yours :)
