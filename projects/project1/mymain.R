@@ -21,7 +21,7 @@ for (package in packages) {
 }
 
 # TODO set this to FALSE before submitting 
-DEBUG = TRUE 
+DEBUG = FALSE 
 
 set.seed(235)
 
@@ -115,7 +115,7 @@ print_formatted = function(pred, idx, file_name) {
               file=file_name, 
               row.names=FALSE, 
               quote=FALSE, 
-              sep = ",  ")
+              sep = ",\t")
 }
 
 get_rmse = function(y_pred, y_actual) {
