@@ -33,72 +33,16 @@ winsor_vars = c("Lot_Frontage", "Lot_Area", "Mas_Vnr_Area",
                 "Enclosed_Porch", "Three_season_porch", 
                 "Screen_Porch", "Misc_Val")
 
-nominals = c('MS_Zoning',
-             'Neighborhood')
+# heavily biased, omitted 
+vars_to_remove = c('Street', 'Utilities', 'Condition_2', 'Roof_Matl', 
+                   'Heating', 'Pool_QC', 'Misc_Feature', 'Low_Qual_Fin_SF', 
+                   'Pool_Area', 'Longitude','Latitude')
 
-nominal_vals = I(list(c('Agriculture',
-                        'Commercial',
-                        'Floating Village Residential',
-                        'Industrial',
-                        'Residential High Density',
-                        'Residential Low Density',
-                        'Residential Low Density Park ',
-                        'Residential Medium Density'),
-                      c('Bloomington Heights', 
-                        'Bluestem', 
-                        'Briardale', 
-                        'Brookside', 
-                        'Clear Creek', 
-                        'College Creek', 
-                        'Crawford', 
-                        'Edwards', 
-                        'Gilbert', 
-                        'Greens', 
-                        'Green Hills', 
-                        'Iowa DOT and Rail Road', 
-                        'Landmark', 
-                        'Meadow Village', 
-                        'Mitchell', 
-                        'North Ames', 
-                        'Northridge', 
-                        'Northpark Villa', 
-                        'Northridge Heights', 
-                        'Northwest Ames', 
-                        'Old Town', 
-                        'South & West of Iowa State University', 
-                        'Sawyer', 
-                        'Sawyer West', 
-                        'Somerset', 
-                        'Stone Brook', 
-                        'Timberland', 
-                        'Veenker')
-                      ))
-
-nominal_df = data.frame(name=nominals, options=nominal_vals)
-
-#replace spaces with underscores for nominals
-nominal_df$options <- lapply(nominal_df$options, function(vec) {gsub(" ", "_", vec)})
-
-clean_all = function(df_in) {
-  # shared cleaning, to be called by clean_linear and clean_tree
+clean_input = function(df_in) {
+  # Cleans an input df. Df should include ID columns. Optionally include Y
   
   # zero out the Garage Year Built missing data
   df_in$Garage_Yr_Blt[is.na(df_in$Garage_Yr_Blt)] = 0
-  
-  df_out = df_in
-  
-  return(df_out)
-}
-
-clean_linear = function(df_in) {
-  # specific cleaning steps for linear model
-  
-  # perform shared cleaning
-  df_in = clean_all(df_in)
-  
-  # remove categorical variables
-  vars_to_remove = c('Street', 'Utilities', 'Condition_2', 'Roof_Matl', 'Heating', 'Pool_QC', 'Misc_Feature', 'Low_Qual_Fin_SF', 'Pool_Area', 'Longitude','Latitude')
-  df_in = df_in[ , -which(names(df_in) %in% vars_to_remove)]
   
   # 95% winsorization
   for(var in winsor_vars){
@@ -141,23 +85,33 @@ clean_linear = function(df_in) {
   return(out_df)
 }
 
-clean_tree = function(df_in) {
-  # perform shared cleaning
-  df_in = clean_all(df_in)
+force_col_match(source, target) {
+  # forces target df to have the same columns and column order as source
+  # for missing columns creates columns of 0s 
   
-  # drop missing values
-  df_in = df_in[complete.cases(df_in), ]
+  # get missing columns
+  missing_cols = setdiff(colnames(target), colnames(source))
   
-  numeric_columns = sapply(df_in, function(x) is.integer(x) || is.numeric(x))
-  out_df = df_in[, numeric_columns]
+  # make zero columns for the missing columns
+  missing_df = data.frame(matrix(0, nrow=nrow(target), ncol=length(missing_cols)))
+  colnames(missing_df) = missing_col
   
-  return(out_df)
-}
+  # add missing columns to target
+  target = cbind(target, temp_columns)
+  
+  # drop extra columns and put columns in order
+  correct_cols = colnames(source)
+  
+  target = target[, correct_cols]
+  
+  return(target)
+} 
+
 
 print_formatted = function(pred, idx, file_name) {
+  # prints output to file matching assignment instruction example 
   
   out_df = data.frame(PID=idx, Sale_Price=pred)
-  
   out_df$Sale_Price = round(out_df$Sale_Price, 1)
   
   # format output per guidance 
@@ -184,7 +138,7 @@ train_and_eval = function(test_x, train, test_y) {
   # if train_y is null. does not evaluate and instead prints output to file
   
   ############ LINEAR MODEL  ############
-  train_linear = clean_linear(train)
+  train_linear = clean_input(train)
   test_x_linear = clean_linear(test_x)
   test_idx_linear = test_x_linear$PID
   
