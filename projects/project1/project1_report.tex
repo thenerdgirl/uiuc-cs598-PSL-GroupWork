@@ -1,0 +1,247 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Project 1: Predict the Housing Prices in Ames},
+  pdfauthor={Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May - jemay3},
+  colorlinks=true,
+  linkcolor={Maroon},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={cyan},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Project 1: Predict the Housing Prices in Ames}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{CS598: Practical Statistical Learning}
+\author{Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May -
+jemay3}
+\date{01 October 2023}
+
+\begin{document}
+\maketitle
+
+\hypertarget{assignment-data}{%
+\section{Assignment Data}\label{assignment-data}}
+
+Program: MCS-DS Assignment post:
+\href{https://campuswire.com/c/G06C55090/feed/193}{campuswire}
+
+Team contributions:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.2623}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.7377}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Person
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Contribution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Naomi Bhagat & Data pre-procesing, traning/testing general process,
+report Section 1 \\
+Michael Miller & \\
+Joe May & Report Section 1 and 2, debugging, and quality control \\
+\end{longtable}
+
+\hypertarget{section-1-technical-details}{%
+\section{Section 1: Technical
+Details}\label{section-1-technical-details}}
+
+Discuss details such as data pre-processing and other non-trivial
+implementation aspects of your models. Do NOT paste your code in the
+report. Instead, explain the technical steps in clear English. Your
+description should be comprehensive enough for your fellow PSL
+classmates to replicate your results.
+
+For instance, when documenting your pre-processing steps, provide
+specifics such as: - Which variables did you exclude from the analysis?
+- Identify the variables treated as categorical. How were these
+variables encoded, were any levels merged, etc? - For numerical
+variables, were there any transformations applied? - You're not required
+to justify these pre-processing decisions; just state what was done.
+When documenting implementation, general statements like ``We use lasso
+to fit a sparse regression model'' are insufficient. Instead, aim for
+detailed descriptions, such as: ``We utilized lasso for regression
+modeling. Specifically, we employed the glmnet function in R with the
+data standardized and with lambda set to lambda.min.''
+
+\#---------------------------------------------------------------------
+
+Our implementation begins by looping through the packages `glmnet',
+`randomForest', and `xgboost', which we install or import as needed. We
+have a variable for debugging that is FALSE by default. When it's set to
+TRUE our code runs in debugging mode. After our installs, we initialize
+vectors for winsorization and omitted variables, followed by functions
+to be called when we train and evaluate the model. The first function
+`clean\_input' takes a dataframe as an input and returns a cleaned
+dataframe. First we replace missing values for the year the garage was
+built with zero. This is the only column missing values. Second, we
+remove the columns for variables we've decided to remove. We removed
+`Street', `Utilities', `Condition\_2', `Roof\_Matl', `Heating',
+`Pool\_QC', `Misc\_Feature', `Low\_Qual\_Fin\_SF', `Pool\_Area',
+`Longitude', \& `Latitude'. We chose them because most are categorical
+values with a skewed balance of indicators, which would likely cause
+overfitting. Latitude and longitude don't lend themselves to
+interpretable insights, especially since neighborhood does a clearer and
+better job. Third, we applied transformations to numerical variables. We
+perform winsorization on `Lot\_Frontage', `Lot\_Area', `Mas\_Vnr\_Area',
+`BsmtFin\_SF\_2', `Bsmt\_Unf\_SF', `Total\_Bsmt\_SF', `Second\_Flr\_SF',
+`First\_Flr\_SF', `Gr\_Liv\_Area', `Garage\_Area', `Wood\_Deck\_SF',
+`Open\_Porch\_SF', `Enclosed\_Porch', `Three\_season\_porch',
+`Screen\_Porch', \& `Misc\_Val'. This identifies values above the the
+95\% quantile with that value. This creates a cap because there are
+diminishing returns for considering larger values for these numerical
+columns. Finally, we convert any left over categorical variables to
+1-hot vectors. Our pre-processing step counts the unique categorical
+values for any character vector, creates a column for each value, and
+assigns a one to the column representing a row's category, and sets the
+rest equal to zero. The last part of our `clean\_input' function puts
+`Sale\_Price' at the end and returns the cleaned dataframe. Afterward
+this, we have functions `force\_col\_match', `print\_formatted', and
+`get\_rmse'. The first function is one which pads with columns of zeros
+to ensure our training and test data have the same number of columns.
+The function `print\_formatted' prints our predictions into the two
+submission files. Also, we have the `get\_rmse' function, which the sum
+of squares difference in actual and predicted y values, and takes the
+square root of the sum of squares divided by n.~ Next we have a
+`train\_and\_eval' function that takes the test and training data as
+inputs, processes the data, and creates the models. It begins by
+cleaning the training data with the common `clean\_input' function. Then
+we clean the test data with `clean\_input'. Next, the cleaned dataframes
+are passed into `force\_col\_match' so that the dataframes have the same
+number of columns. Then we format the data as matrices. Finally, we are
+ready to create our models. We use `glmnet' to create a temporary model,
+with an alpha of one. This model is used to determine the selection of
+model variables. Again, we use `glmnet' to create the actual linear
+model, restricting our data to the variables selected by the temporary
+model, with alpha set to zero. Our model utilizes a blend of lasso and
+ridge regression as implied by our different alphas. Our variable
+selection of `glmnet' in R utlized a lasso for regression modeling since
+alpha was zero. For our actual model, we utilized a ridge for regression
+modeling since we used `glmnet' in R with an alpha of one. Once the
+modeling is finished, we make our predictions of the test data. The
+largest challenge was dealing with categorical variables. The model
+would more appropriately deal with categorical variables using 1-hot
+encoded columns, but this introduced a challenge because not all the
+same categorical values existed in both datasets. Consequently, we had
+to force the dataframes to match to deal with the unintended consequence
+of our preprocessing. Next our model implements the tree model. We use
+`xgboost' in R with a maximum depth of 6, and eta of 0.05, an nthread of
+2, 500 n rounds, and set verbose and print every n to zero. Then, we
+make our predictions on the test data. Lastly, our function evaluates
+the models. Last, but not least, we run the entire process. Whether it
+is in debugging mode or not, we import the appropriate test and training
+data. If it is, we split the test data into ten folds, iterate through
+the ten folds, train, evaluate, and print statistics. We print RMSE for
+the linear and tree model for its performance and the time it took to
+train that fold. If the code is not in debugging mode, it imports test
+data, imports training data, trains, and evaluates the models. Finally,
+it prints the submission files.
+
+\hypertarget{section-2-performance-metrics}{%
+\section{Section 2: Performance
+Metrics}\label{section-2-performance-metrics}}
+
+Report the accuracy of your models on the test data (refer to the
+provided evaluation metric below), the execution time of your code, and
+details of the computer system you used (e.g., Macbook Pro, 2.53 GHz,
+4GB memory or AWS t2.large) for all 10 training/test splits.
+
+\#---------------------------------------------------------------------
+
+The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz
+with 8.00 GB of installed RAM for all 10 training/test splits. Below is
+a summary of the fold \#, the model RMSE and the time it took to train
+the model: -----RMSE----- ---TIME (S)--- fold linear tree linear tree 1
+0.1248 0.1171 1.415 6.725\\
+2 0.1211 0.1211 1.919 10.118\\
+3 0.1201 0.1138 1.672 10.393\\
+4 0.1208 0.1181 1.730 9.897\\
+5 0.1140 0.1152 2.155 10.121\\
+6 0.1341 0.1308 1.473 10.330\\
+7 0.1266 0.1340 1.379 10.355\\
+8 0.1192 0.1283 1.756 10.378\\
+9 0.1305 0.1315 1.547 10.226\\
+10 0.1257 0.1269 1.528 10.348
+
+\end{document}

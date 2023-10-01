@@ -20,7 +20,7 @@ for (package in packages) {
   library(package, character.only=TRUE)
 }
 
-DEBUG = FALSE 
+DEBUG = TRUE
 
 set.seed(235)
 
