@@ -20,10 +20,28 @@ Team contributions:
 | Person         | Contribution |
 |----------      |----------|
 | Naomi Bhagat   | Part 1 |
-| Michael Miller |  |
+| Michael Miller | Part 2 |
 | Joe May        |  |
 
-Assignment URL: [campuswire post]()
+Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/242)
+
+```{r setup, eval = TRUE}
+# add required packages
+packages = c('splines')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(235)
+
+```
+
 
 # Part 1: Optimal Span for LOESS
 ## Part 1-1: Computing the Diagonal of the Smoother Matrix
@@ -140,4 +158,53 @@ lines(fx, predict(cv_f, data.frame(x = fx)), lty=2, col="green")
 gcv_f = loess(y ~ x, part1_data, span=gcv_opt)
 lines(fx, predict(gcv_f, data.frame(x = fx)), lty=2, col="blue")
 ```
+
+# Part 2: Clustering Time Series
+## Preparation
+
+```{r part2-0, eval = TRUE}
+sales_df = read.csv('Sales_Transactions_Dataset_Weekly.csv')
+
+# Per https://campuswire.com/c/G06C55090/feed/346, only keep W columns
+sales_df = subset(sales_df, select = grepl('W', names(sales_df)))
+
+#de-mean
+sales_df = sales_df - sapply(sales_df, function(x) colMeans(sales_df))
+
+X = sales_df
+```
+
+## Part 2-1: Fitting NCS
+- Fit each time series with an NCS with df = 10. This corresponds to an NCS with 8 interior knots. Each row of X represents the response, with the 1-dimensional feature being the index from 1 to 52.
+- Store the NCS coefficients (excluding the intercept) in an 811-by-9 matrix B
+
+```{r part2-1, eval = TRUE}
+# spline for each var
+spline_count = ncol(X)
+weeks = 1:52
+df = 10
+
+# get a natural cubic spline for each column, store the coefs (except intercept)
+B = matrix(0, nrow=spline_count, ncol=df-1)
+for(i in 1:spline_count) {
+  B[i, ] = smooth.spline(x=weeks, y=X[i,], df=10)$y[1:df-1]
+}
+
+```
+
+
+Part 2-2: Clustering using Matrix B
+```{r part2-1, eval = TRUE}
+#6 clusters per instructions 
+k = 6
+
+kmeans_result = kmeans(B[1, ], centers = K)
+
+```
+
+
+Part 2-3: Clustering using Matrix X 
+
+
+
 
