@@ -65,9 +65,9 @@ The next pre-processing step was Winsorization. Because the impact of some of th
 - Screen_Porch
 - Misc_Val
 
-Next, we converted our remaining categorical variables into 1-hot vectors. This step counts the unique categorical values for any character vector, creates a column for each value, and assigns a one to the column representing a row’s category, and sets the rest equal to zero.  Finally, the last step of our pre-processing function add the ‘Sale_Price’ column back into the output dataframe (if it was removed - this is mainly to benefit the training data) and returns the output dataframe.
+Next, we converted our remaining categorical variables into 1-hot vectors. This step counts the unique categorical values for any character vector, creates a column for each value, and assigns a one to the column representing a row’s category, and sets the rest equal to zero. Finally, the last step of our pre-processing function add the ‘Sale_Price’ column back into the output dataframe (if it was removed - this is mainly to benefit the training data) and returns the output dataframe.
 
-In addition to the direct proe-processing of data, we include a function that which pads both dataframes with columns of zeros to ensure our training and test data have the same number of columns, making it easier to train models.
+In addition to the direct pre-processing of data, we include a function that which pads both dataframes with columns of zeros to ensure our training and test data have the same number of columns, making it easier to train models.
 
 ## Linear Model
 
@@ -85,6 +85,10 @@ For our tree model, we initially tried using a randomForest, but no matter how m
 # Section 2: Performance Metrics
 
 The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 10 training/test splits. Below is a summary of the fold #, the model RMSE and the time it took to train the model.
+
+## Calculating Performance
+
+To calculate performance, we include a function ‘get_rmse’, which the sum of squares difference in actual and predicted y values, and takes the square root of the sum of squares divided by n. 
 
 ## Linear Model Performance
 
