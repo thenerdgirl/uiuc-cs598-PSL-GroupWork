@@ -171,7 +171,7 @@ sales_df = subset(sales_df, select = grepl('W', names(sales_df)))
 #de-mean
 sales_df = sales_df - sapply(sales_df, function(x) colMeans(sales_df))
 
-X = sales_df
+X = as.matrix(sales_df)
 ```
 
 ## Part 2-1: Fitting NCS
@@ -179,16 +179,16 @@ X = sales_df
 - Store the NCS coefficients (excluding the intercept) in an 811-by-9 matrix B
 
 ```{r part2-1, eval = TRUE}
-# spline for each var
-spline_count = ncol(X)
+
 weeks = 1:52
 df = 10
 
-# get a natural cubic spline for each column, store the coefs (except intercept)
-B = matrix(0, nrow=spline_count, ncol=df-1)
-for(i in 1:spline_count) {
-  B[i, ] = smooth.spline(x=weeks, y=X[i,], df=10)$y[1:df-1]
-}
+# get design matrix and remove intercept 
+f = as.matrix(ns(X[1, ], df=9, intercept=FALSE))
+
+# get matrix of splines
+B = t(solve((t(f) %*% f)) %*% t(f) %*% t(X))
+
 
 ```
 
@@ -196,9 +196,30 @@ for(i in 1:spline_count) {
 Part 2-2: Clustering using Matrix B
 ```{r part2-1, eval = TRUE}
 #6 clusters per instructions 
-k = 6
 
-kmeans_result = kmeans(B[1, ], centers = K)
+clusters = kmeans(B, centers=6)
+cluster = 1
+
+
+
+x_cluster = X[clusters$cluster == cluster, ]
+b_cluster = B[clusters$cluster == cluster, ]
+
+spline_plot = f %*% colMeans(b_cluster)
+
+plot.new(); plot.window(xlim=c(1,2),ylim=c(1,6) )
+
+plot(weeks, spline_plot, type = 'l')
+lines(weeks, x_cluster[1, ], type = 'l')
+
+
+for (series in 1:nrow(time_series)) {
+  lines(weeks, time_series[series, ])
+}
+
+dim(X[clusters$cluster == 1, ])
+
+
 
 ```
 
