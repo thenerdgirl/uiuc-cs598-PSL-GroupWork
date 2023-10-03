@@ -63,7 +63,7 @@ We also create a tree model. While we initially attempted to use a randomforest 
 
 The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 10 training/test splits. Below is a summary of the fold #, the RMSEs for the linear and tree models respectively and the time it took to train the models:
 
-| Fold	| Linear RMSE  |	Tree RMSE   | Linear Time  | Tree Time    |
+| Fold	| Linear RMSE  |	Tree RMSE   | Linear Time (s)  | Tree Time (s) |
 |-------|--------------|--------------|--------------|--------------|
 | 1	| 0.1248 | 0.1171 | 1.415 |	6.725 |	
 | 2	| 0.1211 | 0.1211	| 1.919	| 10.118 |
