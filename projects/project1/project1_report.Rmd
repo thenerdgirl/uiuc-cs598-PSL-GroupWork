@@ -29,7 +29,7 @@ Team contributions:
 
 # Section 1: Technical Details
 
-The goal of this project is to predict the price of a home using certain features present in the Ames housing dataset. Importantly, the Sale price is predicted on a logarithmic scale. To achieve this goal, we built two prediction models: one using linear regression and one using a tree model to yield an RMSE of 0.125 for the first five splits and 0.135 on the final five splits.
+The goal of this project is to predict the price of a home using certain features present in the Ames housing dataset. Importantly, the Sale price is predicted on a logarithmic scale. To achieve this goal, we built two prediction models: one using linear regression and one using a tree model to yield an RMSE of 0.125 for the first five splits and 0.135 on the final five splits. We used R for our implementation.
 
 ## Pre-Processing
 
