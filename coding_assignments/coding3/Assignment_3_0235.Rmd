@@ -169,7 +169,7 @@ sales_df = read.csv('Sales_Transactions_Dataset_Weekly.csv')
 sales_df = subset(sales_df, select = grepl('W', names(sales_df)))
 
 #de-mean
-sales_df = sales_df - apply(sales_df, 1, mean)
+sales_df = sales_df - rowMeans(sales_df)
 
 X = as.matrix(sales_df)
 ```
@@ -184,36 +184,33 @@ weeks = 1:52
 df = 10
 
 # get design matrix and remove intercept 
-f = as.matrix(ns(X[1, ], df=10))[ ,1:9]
+f = as.matrix(ns(weeks, df=df-1, intercept=FALSE))
 
 # get matrix of splines
-B = t(solve((t(f) %*% f)) %*% t(f) %*% t(X))
+B = t(solve(t(f) %*% f) %*% t(f) %*% t(X))
 ```
 
 
 Part 2-2: Clustering using Matrix B
-```{r part2-1, eval = TRUE}
+```{r part2-2, eval = TRUE}
 #6 clusters per instructions 
 cluster_count = 6
 
-# get clusters and their corresponding splines
+# get clusters
 clusters = kmeans(B, centers=cluster_count)
-spline_plot = f %*% colMeans(b_cluster)
 
-# initialize new plot with 6 windows
-par(mfrow = c(2, 3))
+# initialize new plot with 6 windows, add some margin for title
+par(mfrow = c(2, 3), oma = c(0, 0, 4, 0))
 
 # iterate through clusters, plot each one
 for (cluster in 1:cluster_count) {
-  i = cluster %% 3
-  j = floor((cluster - 1) / 3) + 1
-  
-  # get data for this window
+  # get data for this cluster
   x_cluster = X[clusters$cluster == cluster, ]
   b_cluster = B[clusters$cluster == cluster, ]
   
   # convert b spline back to timeseries
-  spline_plot = f %*% colMeans(b_cluster)
+  b = colMeans(b_cluster)
+  spline_plot = f %*% b
   
   plot(x=weeks, 
        y=spline_plot,
@@ -221,7 +218,7 @@ for (cluster in 1:cluster_count) {
        ylab='Weekly Sales (delta)',
        xlab='Week',
        ylim=c(-20, 30),
-       col='red',
+       col='blue',
        type = 'l')
   
   # plot each x in this cluster
@@ -234,13 +231,58 @@ for (cluster in 1:cluster_count) {
   # now plot the cluster center again for visibility (so its 'on top')
   lines(x=weeks, 
         y=spline_plot,
-        col="red")
-  
+        col="blue",
+        lwd=2)
 }
+
+# add main title to top
+mtext('Custered Timeserires Data with Spline Centers (B)', side=3, line=1, outer=TRUE)
+
 ```
 
-
 Part 2-3: Clustering using Matrix X 
+```{r part2-3, eval = TRUE}
+# get clusters
+clusters = kmeans(X, centers=cluster_count)
+
+# initialize new plot with 6 windows, add some margin for title
+par(mfrow = c(2, 3), oma = c(0, 0, 4, 0))
+
+# iterate through clusters, plot each one
+for (cluster in 1:cluster_count) {
+  # get data for this cluster
+  x_cluster = X[clusters$cluster == cluster, ]
+  
+  # this time spline plot is mean of clusters
+  center_plot = colMeans(x_cluster)
+  
+  plot(x=weeks, 
+       y=center_plot,
+       main=paste('Cluster ', cluster),
+       ylab='Weekly Sales (delta)',
+       xlab='Week',
+       ylim=c(-20, 30),
+       col='blue',
+       type = 'l')
+  
+  # plot each x in this cluster
+  for (series in 1:nrow(x_cluster)) {
+    lines(x=weeks, 
+          y=x_cluster[series, ],
+          col="grey")
+  }
+  
+  # now plot the cluster center again for visibility (so its 'on top')
+  lines(x=weeks, 
+        y=center_plot,
+        col="blue",
+        lwd=2)
+  
+# add main title to top
+mtext('Custered Timeserires Data with Mean Centers (X)', side=3, line=1, outer=TRUE)
+
+}
+```
 
 
 # Part 3: Ridgeless and double descent
