@@ -179,48 +179,58 @@ X = as.matrix(sales_df)
 - Store the NCS coefficients (excluding the intercept) in an 811-by-9 matrix B
 
 ```{r part2-1, eval = TRUE}
-
+# initialize constants for later use
 weeks = 1:52
 df = 10
 
 # get design matrix and remove intercept 
-f = as.matrix(ns(X[1, ], df=9, intercept=FALSE))
+f = as.matrix(ns(X[1, ], df=10))[ ,1:9]
 
 # get matrix of splines
 B = t(solve((t(f) %*% f)) %*% t(f) %*% t(X))
-
-
 ```
 
 
 Part 2-2: Clustering using Matrix B
 ```{r part2-1, eval = TRUE}
 #6 clusters per instructions 
+cluster_count = 6
 
-clusters = kmeans(B, centers=6)
-cluster = 1
-
-
-
-x_cluster = X[clusters$cluster == cluster, ]
-b_cluster = B[clusters$cluster == cluster, ]
-
+# get clusters and their corresponding splines
+clusters = kmeans(B, centers=cluster_count)
 spline_plot = f %*% colMeans(b_cluster)
 
-plot.new(); plot.window(xlim=c(1,2),ylim=c(1,6) )
+# initialize new plot with 6 windows
+par(mfrow = c(2, 3))
 
-plot(weeks, spline_plot, type = 'l')
-lines(weeks, x_cluster[1, ], type = 'l')
-
-
-for (series in 1:nrow(time_series)) {
-  lines(weeks, time_series[series, ])
+# iterate through clusters, plot each one
+for (cluster in 1:cluster_count) {
+  i = cluster %% 3
+  j = floor((cluster - 1) / 3) + 1
+  
+  # get data for this window
+  x_cluster = X[clusters$cluster == cluster, ]
+  b_cluster = B[clusters$cluster == cluster, ]
+  
+  # convert b spline back to timeseries
+  spline_plot = f %*% colMeans(b_cluster)
+  
+  plot(x=weeks, 
+       y=spline_plot,
+       main=paste('Cluster ', cluster),
+       ylab='Weekly Sales (delta from mean)',
+       xlab='Week',
+       col='red',
+       type = 'l')
+  
+  # plot each x in this cluster
+  for (series in 1:nrow(x_cluster)) {
+    lines(x=weeks, 
+          y=x_cluster[series, ],
+          col="gray")
+  }
+  
 }
-
-dim(X[clusters$cluster == 1, ])
-
-
-
 ```
 
 
