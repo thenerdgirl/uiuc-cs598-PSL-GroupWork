@@ -227,5 +227,35 @@ dim(X[clusters$cluster == 1, ])
 Part 2-3: Clustering using Matrix X 
 
 
+# Part 3: Ridgeless and double descent
+## Part 3-1: Ridgeless Function
 
+```{r part3-1, eval = TRUE}
+
+part3_data = read.csv('Coding3_dataH.csv',header = FALSE)
+
+data = as.matrix(part3_data)
+
+
+ridgeless = function(train, test){
+trainX = train[,-1]
+trainY = train[,1]
+testX = test[,-1]
+testY = test[,1]
+
+pca = prcomp(trainX[,-1], scale = FALSE, center = TRUE)
+pc = pca$rotation
+
+}
+
+
+
+```
+
+## Part 3-2: Simulation study
+
+```{r part3-2, eval = TRUE}
+
+
+```
 
