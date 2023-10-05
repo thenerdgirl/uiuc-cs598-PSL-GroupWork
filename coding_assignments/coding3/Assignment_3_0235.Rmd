@@ -169,7 +169,7 @@ sales_df = read.csv('Sales_Transactions_Dataset_Weekly.csv')
 sales_df = subset(sales_df, select = grepl('W', names(sales_df)))
 
 #de-mean
-sales_df = sales_df - sapply(sales_df, function(x) colMeans(sales_df))
+sales_df = sales_df - apply(sales_df, 1, mean)
 
 X = as.matrix(sales_df)
 ```
@@ -218,8 +218,9 @@ for (cluster in 1:cluster_count) {
   plot(x=weeks, 
        y=spline_plot,
        main=paste('Cluster ', cluster),
-       ylab='Weekly Sales (delta from mean)',
+       ylab='Weekly Sales (delta)',
        xlab='Week',
+       ylim=c(-20, 30),
        col='red',
        type = 'l')
   
@@ -229,6 +230,11 @@ for (cluster in 1:cluster_count) {
           y=x_cluster[series, ],
           col="gray")
   }
+  
+  # now plot the cluster center again for visibility (so its 'on top')
+  lines(x=weeks, 
+        y=spline_plot,
+        col="red")
   
 }
 ```
