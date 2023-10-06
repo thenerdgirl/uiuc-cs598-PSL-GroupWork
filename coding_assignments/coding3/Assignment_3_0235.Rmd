@@ -314,6 +314,49 @@ pc = pca$rotation
 
 ```{r part3-2, eval = TRUE}
 
+# placeholder for testing
+ridgeless = function(train, test){
+  return(4)
+}
+
+
+# params for simulation 
+n_sims = 30
+p_train = .75
+n_train = round(nrow(data) * p_train)
+d_vals = 6:241
+
+# preallocate data collection
+errors = matrix(0, nrow=n_sims, ncol=length(d_vals))
+
+#iterate, run each simulation
+for (sim in 1:n_sims) {
+  # partition data
+  train_idx = sample(1:nrow(data), n_train)
+  train = data[train_idx, ]
+  test = data[-train_idx, ]
+  
+  # iterate through values of d
+  for (d in 1:length(d_vals)) {
+    # subset data to only account for first d params
+    train_subset = train[ ,1:d_vals[d]]
+    test_subset = test[ ,1:d_vals[d]]
+    
+    errors[sim, d] = ridgeless(train, test)
+  }
+}
+
+# average across simulations
+sim_output = apply(errors, 2, median)
+
+plot(x=d_vals-1,
+     y=sim_output, 
+     main=paste('Simulation Study: Error vs. Feature Count'),
+     ylab='Log(TestError)',
+     xlab='Feature Count',
+     log='y',
+     col='red'
+     )
 
 ```
 
