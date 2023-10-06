@@ -329,7 +329,7 @@ testY_pred = testX_principal %*% beta
 
 test_error = log(sqrt(sum(testY - testY_pred)^2))
 
-
+# return both train and test, as suggested
 return(c(train_error, test_error))
 }
 
