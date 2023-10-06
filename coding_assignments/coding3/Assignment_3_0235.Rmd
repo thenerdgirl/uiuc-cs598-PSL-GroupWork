@@ -320,7 +320,6 @@ ridgeless = function(train, test){
   return(runif(nrow(test), min = 0, max = ncol(test)))
 }
 
-
 # params for simulation 
 n_sims = 30
 p_train = .75
@@ -357,10 +356,9 @@ sim_output = apply(errors, 2, median)
 
 plot(x=d_vals-1,
      y=sim_output, 
-     main=paste('Simulation Study: Error vs. Feature Count'),
-     ylab='Log(TestError)',
+     main=paste('Simulation Study: Feature Count vs. Log Cumulative Error'),
+     ylab='Log Cumulative Error',
      xlab='Feature Count',
-     log='y',
      col='blue'
      )
 
