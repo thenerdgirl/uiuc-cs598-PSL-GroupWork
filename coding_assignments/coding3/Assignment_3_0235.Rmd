@@ -319,15 +319,18 @@ trainX_principal = pca$x[, selected]
 lambda = diag(1/diag(t(trainX_principal) %*% trainX_principal))
 beta = lambda %*% t(trainX_principal) %*% trainY
 
+# from prof, we need to take the intercept here in order to add it back after
+b0 = mean(trainY)
+
 # get train error
-trainY_pred = trainX_principal %*% beta
-train_error = log(sqrt(sum(trainY - trainY_pred)^2))
+trainY_pred = b0 + trainX_principal %*% beta
+train_error = log(mean(sqrt(sum(trainY - trainY_pred)^2)))
 
 # get test error
 testX_principal = predict(pca, newdata=testX)[, selected]
-testY_pred = testX_principal %*% beta
+testY_pred = b0 + testX_principal %*% beta
 
-test_error = log(sqrt(sum(testY - testY_pred)^2))
+test_error = log(mean(sqrt(sum(testY - testY_pred)^2)))
 
 # return both train and test, as suggested
 return(c(train_error, test_error))
@@ -374,8 +377,8 @@ sim_output = apply(errors, 2, median)
 
 plot(x=d_vals-1,
      y=sim_output, 
-     main=paste('Simulation Study: Feature Count vs. Log Cumulative Error'),
-     ylab='Log Cumulative Error',
+     main=paste('Simulation Study: Feature Count vs. Log Error'),
+     ylab='Log Error',
      xlab='Feature Count',
      col='blue'
      )
