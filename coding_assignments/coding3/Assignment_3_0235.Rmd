@@ -290,23 +290,48 @@ mtext('Custered Timeserires Data with Mean Centers (X)', side=3, line=1, outer=T
 
 ```{r part3-1, eval = TRUE}
 
+# from assignment, recommended threshold for excluding eigen values
+eps = 1e-10
+
 part3_data = read.csv('Coding3_dataH.csv',header = FALSE)
 
 data = as.matrix(part3_data)
 
-
 ridgeless = function(train, test){
+# partition into X and Y 
 trainX = train[,-1]
 trainY = train[,1]
 testX = test[,-1]
 testY = test[,1]
 
-pca = prcomp(trainX[,-1], scale = FALSE, center = TRUE)
-pc = pca$rotation
 
+# do PCA on train (note this is doing centering for us I think)
+pca = prcomp(trainX, scale = FALSE, center = TRUE)
+components = pca$sdev
+
+# throw away any components that are worse than professor-defined eps
+selected = which(abs(components) > eps)
+
+# now extract selected features
+trainX_principal = pca$x[, selected]
+
+# now do ridgeless regression (?)
+lambda = diag(1/diag(t(trainX_principal) %*% trainX_principal))
+beta = lambda %*% t(trainX_principal) %*% trainY
+
+# get train error
+trainY_pred = trainX_principal %*% beta
+train_error = log(sqrt(sum(trainY - trainY_pred)^2))
+
+# get test error
+testX_principal = predict(pca, newdata=testX)[, selected]
+testY_pred = testX_principal %*% beta
+
+test_error = log(sqrt(sum(testY - testY_pred)^2))
+
+
+return(c(train_error, test_error))
 }
-
-
 
 ```
 
@@ -315,14 +340,9 @@ Graphical display: Plot the median of the test errors (collated over the 30 iter
 
 ```{r part3-2, eval = TRUE}
 
-# placeholder for testing
-ridgeless = function(train, test){
-  return(runif(nrow(test), min = 0, max = ncol(test)))
-}
-
 # params for simulation 
 n_sims = 30
-p_train = .75
+p_train = .25
 n_train = round(nrow(data) * p_train)
 d_vals = 6:241
 
@@ -342,10 +362,8 @@ for (sim in 1:n_sims) {
     train_subset = train[ ,1:d_vals[d]]
     test_subset = test[ ,1:d_vals[d]]
     
-    # this part depends a bit on specific implementation of ridgeless
-    # error needs to be vector of test error
-    out = ridgeless(train_subset, test_subset)
-    error = log(sum(out))
+    # Call ridgeless, only keep test error
+    error = ridgeless(train_subset, test_subset)[2]
     
     errors[sim, d] = error
   }
