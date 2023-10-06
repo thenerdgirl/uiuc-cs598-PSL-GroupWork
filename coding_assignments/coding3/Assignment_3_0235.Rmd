@@ -311,12 +311,13 @@ pc = pca$rotation
 ```
 
 ## Part 3-2: Simulation study
+Graphical display: Plot the median of the test errors (collated over the 30 iterations) in log scale against the count of regression parameters, which spans from 5 to 240.
 
 ```{r part3-2, eval = TRUE}
 
 # placeholder for testing
 ridgeless = function(train, test){
-  return(4)
+  return(runif(nrow(test), min = 0, max = ncol(test)))
 }
 
 
@@ -342,7 +343,12 @@ for (sim in 1:n_sims) {
     train_subset = train[ ,1:d_vals[d]]
     test_subset = test[ ,1:d_vals[d]]
     
-    errors[sim, d] = ridgeless(train, test)
+    # this part depends a bit on specific implementation of ridgeless
+    # error needs to be vector of test error
+    out = ridgeless(train_subset, test_subset)
+    error = log(sum(out))
+    
+    errors[sim, d] = error
   }
 }
 
@@ -355,8 +361,7 @@ plot(x=d_vals-1,
      ylab='Log(TestError)',
      xlab='Feature Count',
      log='y',
-     col='red'
+     col='blue'
      )
 
 ```
-
