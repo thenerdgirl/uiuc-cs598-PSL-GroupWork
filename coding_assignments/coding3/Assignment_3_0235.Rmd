@@ -20,8 +20,8 @@ Team contributions:
 | Person         | Contribution |
 |----------      |----------|
 | Naomi Bhagat   | Part 1 |
-| Michael Miller | Part 2 |
-| Joe May        |  |
+| Michael Miller | Part 2 & 3|
+| Joe May        | Part 3/Quality Assurance  |
 
 Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/242)
 
