@@ -1,0 +1,386 @@
+---
+title: "Coding Assignment 3"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Part 1 |
+| Michael Miller | Part 2 & 3|
+| Joe May        | Part 3/Quality Assurance  |
+
+Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/242)
+
+```{r setup, eval = TRUE}
+# add required packages
+packages = c('splines')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(235)
+
+```
+
+
+# Part 1: Optimal Span for LOESS
+## Part 1-1: Computing the Diagonal of the Smoother Matrix
+
+Create a function to retrieve the diagonal of the smoother matrix. We’re only
+interested in the diagonal entries (which will be used in computing LOO-CV and
+GCV), so this function should return an n-by-1 vector.
+- Inputs: x (an n-by-1 feature vector) and span (a numerical value).
+- Output: n-by-1 vector representing the diagonal of the smoother matrix S.
+- Tip: Review the technique we used for the smoother matrix in smoothing spline 
+models and adapt it for LOESS.
+
+```{r part1-1, eval = TRUE}
+get_diag = function(x, span) {
+  # x: n-by-1 feature vector
+  # span: numerical value for span
+  
+  n = length(x)
+  
+  # return vector d (diagonal)
+  d = rep(0, n)
+  
+  # Smoothing matrix S
+  S = diag(n)
+  
+  # Algorithm
+  for(i in 1:n) {
+    fit = loess(S[ , i] ~ x, span=span)
+    y_hat = fit$fitted
+    d[i] = y_hat[i]
+  }
+  
+  return(d)
+}
+```
+
+### Part 1-2
+Span Value Iteration:
+- Iterate over the specified span values.
+- For each span, calculate the CV and GCV values.
+- Post iteration, compile lists of CV and GCV values corresponding to each span.
+
+```{r part1-2, eval = TRUE}
+span_value_iter = function(x, y, span) {
+  n = length(x)
+  num_span = length(span)
+  
+  # return value vectors
+  cv = rep(0, num_span)
+  gcv = rep(0, num_span)
+  
+  # Iterate over the span values
+  for(s in 1:num_span) {
+    # For each span, calculate cv and gcv values
+    # First, fit the loess model
+    fit = loess(y ~ x, span=span[s], control=loess.control(surface="direct"))
+    residuals = fit$residuals
+    d = get_diag(x, span[s])
+    
+    # intermediate calculations for cv and gcv
+    # https://liangfgithub.github.io/Notes/lec_W5_NonlinearRegression.pdf slide 33
+    tr = sum(d)
+    sse = sum(residuals ^ 2)
+    
+    # calculate cv
+    cv[s] = sum((residuals / (1 - d))^2) / n
+    
+    # calculate gcv
+    gcv[s] = sse / (n * (1 - (tr / n)) ^ 2)
+  }
+  
+  return(list(cv = cv, gcv = gcv))
+}
+```
+
+### Part 1-3
+1. Test your code using data set [Coding3_Data.csv]
+2. Report your CV and GCV for the following 15 span values: 0.20, 0.25, . . . , 0.90.
+3. Report the optimal span value(s) based on CV and GCV.
+4. Display the original data points and overlay them with the true curve and the fitted curve(s) generated using the optimal span value(s).
+
+The true curve is \[ f(x) = \frac{\sin(12(x + 0.2))}{x + 0.2} \]
+
+```{r part1-3, eval = TRUE}
+part1_data = read.csv("Coding3_Data.csv")
+test_span = c(0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9)
+result = span_value_iter(part1_data$x, part1_data$y, test_span)
+
+# Report cv, gcv values
+output = data.frame(CV = result$cv, GCV = result$gcv, span = test_span)
+output
+
+# Optimal cv values
+cv_opt = output$span[output$CV == min(output$CV)]
+cv_opt
+
+# Optimal gcv values
+gcv_opt = output$span[output$GCV == min(output$GCV)]
+gcv_opt
+
+# Plot curve
+# Data + Control curve
+plot(part1_data$x, part1_data$y, xlab="x", ylab="y")
+
+fx = 1:50/50
+fy = sin(12*(fx + 0.2)) / (fx + 0.2)
+lines(fx, fy, col="red")
+
+# My curve - cv
+cv_f = loess(y ~ x, part1_data, span=cv_opt)
+lines(fx, predict(cv_f, data.frame(x = fx)), lty=2, col="green")
+
+# My curve - gcv
+gcv_f = loess(y ~ x, part1_data, span=gcv_opt)
+lines(fx, predict(gcv_f, data.frame(x = fx)), lty=2, col="blue")
+```
+
+# Part 2: Clustering Time Series
+## Preparation
+
+```{r part2-0, eval = TRUE}
+sales_df = read.csv('Sales_Transactions_Dataset_Weekly.csv')
+
+# Per https://campuswire.com/c/G06C55090/feed/346, only keep W columns
+sales_df = subset(sales_df, select = grepl('W', names(sales_df)))
+
+#de-mean
+sales_df = sales_df - rowMeans(sales_df)
+
+X = as.matrix(sales_df)
+```
+
+## Part 2-1: Fitting NCS
+- Fit each time series with an NCS with df = 10. This corresponds to an NCS with 8 interior knots. Each row of X represents the response, with the 1-dimensional feature being the index from 1 to 52.
+- Store the NCS coefficients (excluding the intercept) in an 811-by-9 matrix B
+
+```{r part2-1, eval = TRUE}
+# initialize constants for later use
+weeks = 1:52
+df = 10
+
+# get design matrix and remove intercept 
+f = as.matrix(ns(weeks, df=df-1, intercept=FALSE))
+
+# get matrix of splines
+B = t(solve(t(f) %*% f) %*% t(f) %*% t(X))
+```
+
+
+Part 2-2: Clustering using Matrix B
+```{r part2-2, eval = TRUE}
+#6 clusters per instructions 
+cluster_count = 6
+
+# get clusters
+clusters = kmeans(B, centers=cluster_count)
+
+# initialize new plot with 6 windows, add some margin for title
+par(mfrow = c(2, 3), oma = c(0, 0, 4, 0))
+
+# iterate through clusters, plot each one
+for (cluster in 1:cluster_count) {
+  # get data for this cluster
+  x_cluster = X[clusters$cluster == cluster, ]
+  b_cluster = B[clusters$cluster == cluster, ]
+  
+  # convert b spline back to timeseries
+  b = colMeans(b_cluster)
+  spline_plot = f %*% b
+  
+  plot(x=weeks, 
+       y=spline_plot,
+       main=paste('Cluster ', cluster),
+       ylab='Weekly Sales (delta)',
+       xlab='Week',
+       ylim=c(-20, 30),
+       col='blue',
+       type = 'l')
+  
+  # plot each x in this cluster
+  for (series in 1:nrow(x_cluster)) {
+    lines(x=weeks, 
+          y=x_cluster[series, ],
+          col="gray")
+  }
+  
+  # now plot the cluster center again for visibility (so its 'on top')
+  lines(x=weeks, 
+        y=spline_plot,
+        col="blue",
+        lwd=2)
+}
+
+# add main title to top
+mtext('Custered Timeserires Data with Spline Centers (B)', side=3, line=1, outer=TRUE)
+
+```
+
+Part 2-3: Clustering using Matrix X 
+```{r part2-3, eval = TRUE}
+# get clusters
+clusters = kmeans(X, centers=cluster_count)
+
+# initialize new plot with 6 windows, add some margin for title
+par(mfrow = c(2, 3), oma = c(0, 0, 4, 0))
+
+# iterate through clusters, plot each one
+for (cluster in 1:cluster_count) {
+  # get data for this cluster
+  x_cluster = X[clusters$cluster == cluster, ]
+  
+  # this time spline plot is mean of clusters
+  center_plot = colMeans(x_cluster)
+  
+  plot(x=weeks, 
+       y=center_plot,
+       main=paste('Cluster ', cluster),
+       ylab='Weekly Sales (delta)',
+       xlab='Week',
+       ylim=c(-20, 30),
+       col='blue',
+       type = 'l')
+  
+  # plot each x in this cluster
+  for (series in 1:nrow(x_cluster)) {
+    lines(x=weeks, 
+          y=x_cluster[series, ],
+          col="grey")
+  }
+  
+  # now plot the cluster center again for visibility (so its 'on top')
+  lines(x=weeks, 
+        y=center_plot,
+        col="blue",
+        lwd=2)
+  
+# add main title to top
+mtext('Custered Timeserires Data with Mean Centers (X)', side=3, line=1, outer=TRUE)
+
+}
+```
+
+
+# Part 3: Ridgeless and double descent
+## Part 3-1: Ridgeless Function
+
+```{r part3-1, eval = TRUE}
+
+# from assignment, recommended threshold for excluding eigen values
+eps = 1e-10
+
+part3_data = read.csv('Coding3_dataH.csv',header = FALSE)
+
+data = as.matrix(part3_data)
+
+ridgeless = function(train, test){
+# partition into X and Y 
+trainX = train[,-1]
+trainY = train[,1]
+testX = test[,-1]
+testY = test[,1]
+
+
+# do PCA on train (note this is doing centering for us I think)
+pca = prcomp(trainX, scale = FALSE, center = TRUE)
+components = pca$sdev
+
+# throw away any components that are worse than professor-defined eps
+selected = which(abs(components) > eps)
+
+# now extract selected features
+trainX_principal = pca$x[, selected]
+
+# now do ridgeless regression (?)
+lambda = diag(1/diag(t(trainX_principal) %*% trainX_principal))
+beta = lambda %*% t(trainX_principal) %*% trainY
+
+# from prof, we need to take the intercept here in order to add it back after
+b0 = mean(trainY)
+
+# get train error
+trainY_pred = b0 + trainX_principal %*% beta
+train_error = log(mean(sqrt(sum(trainY - trainY_pred)^2)))
+
+# get test error
+testX_principal = predict(pca, newdata=testX)[, selected]
+testY_pred = b0 + testX_principal %*% beta
+
+test_error = log(mean(sqrt(sum(testY - testY_pred)^2)))
+
+# return both train and test, as suggested
+return(c(train_error, test_error))
+}
+
+```
+
+## Part 3-2: Simulation study
+Graphical display: Plot the median of the test errors (collated over the 30 iterations) in log scale against the count of regression parameters, which spans from 5 to 240.
+
+```{r part3-2, eval = TRUE}
+
+# params for simulation 
+n_sims = 30
+p_train = .25
+n_train = round(nrow(data) * p_train)
+d_vals = 6:241
+
+# preallocate data collection
+errors = matrix(0, nrow=n_sims, ncol=length(d_vals))
+
+#iterate, run each simulation
+for (sim in 1:n_sims) {
+  # partition data
+  train_idx = sample(1:nrow(data), n_train)
+  train = data[train_idx, ]
+  test = data[-train_idx, ]
+  
+  # iterate through values of d
+  for (d in 1:length(d_vals)) {
+    # subset data to only account for first d params
+    train_subset = train[ ,1:d_vals[d]]
+    test_subset = test[ ,1:d_vals[d]]
+    
+    # Call ridgeless, only keep test error
+    error = ridgeless(train_subset, test_subset)[2]
+    
+    errors[sim, d] = error
+  }
+}
+
+# average across simulations
+sim_output = apply(errors, 2, median)
+
+plot(x=d_vals-1,
+     y=sim_output, 
+     main=paste('Simulation Study: Feature Count vs. Log Error'),
+     ylab='Log Error',
+     xlab='Feature Count',
+     col='blue'
+     )
+
+```
