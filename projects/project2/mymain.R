@@ -10,7 +10,7 @@
 
 #######  load libraries  ####### 
 # packages to load
-packages = c('glmnet', 'xgboost')
+packages = c('lubridate', 'tidyverse','glmnet', 'xgboost')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
