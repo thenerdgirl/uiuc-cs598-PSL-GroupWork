@@ -1,0 +1,43 @@
+---
+title: 'Project 2: Walmart Store Sales Forecasting'
+author: "Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May - jemay3"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document: null
+  html_document:
+    df_print: paged
+subtitle: 'CS598: Practical Statistical Learning'
+urlcolor: cyan
+header-includes:
+- \setlength{\parindent}{2em}
+- \setlength{\parskip}{0em}
+---
+
+# Assignment Data
+
+Program: MCS-DS
+Assignment post: [campuswire](https://campuswire.com/c/G06C55090/feed/339)
+
+
+Team contributions:
+
+| Person         | Contribution                                |
+|----------------|---------------------------------------------|
+| Naomi Bhagat   |  |
+| Michael Miller |  |
+| Joe May        |  |
+
+## Section 1: Technical Details
+
+
+### Pre-Processing
+
+
+
+## Section 2: Performance Metrics
+
+The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 10 training/test splits. 
+
+
+
+
