@@ -20,7 +20,7 @@ for (package in packages) {
   library(package, character.only=TRUE)
 }
 
-DEBUG = FALSE
+DEBUG = TRUE
 
 set.seed(235)
 
@@ -32,8 +32,9 @@ train_and_eval = function(test_x_raw, train_raw, test_y) {
   
   ############ CLEAN INPUTS   ############
   # pass through preprocessing
-  train = clean_input(train_raw)
-  test_x = clean_input(test_x_raw)
+  
+  #train = clean_input(train_raw)
+  #test_x = clean_input(test_x_raw)
   
 
   
@@ -52,13 +53,7 @@ train_and_eval = function(test_x_raw, train_raw, test_y) {
     print_formatted(exp(y_tree), test_idx, 'mysubmission2.txt')
   } else {
     # print metrics 
-    test_y$Sale_Price = log(test_y$Sale_Price)
-    
-    # first, only get the y values we actually used
-    y_actual = subset(test_y, PID %in% test_idx)$Sale_Price
 
-    rmse_linear = get_rmse(y_linear, y_actual)
-    rmse_tree = get_rmse(y_tree, y_actual)
     
     cat(sprintf('%d\t%.4f\t%.4f\t%.3f\t%.3f\t\n',
                 fold_num, 
@@ -80,15 +75,15 @@ if(DEBUG) {
   
   # evaluate all folds 
   for (fold_num in 1:10) {
-    file_dir =  paste0('fold', as.character(fold_num))
-    test_x_raw = read.csv(paste0(file_dir, '/test.csv'))
-    test_y = read.csv(paste0(file_dir, '/test_y.csv'))
-    train_raw = read.csv(paste0(file_dir, '/train.csv'))
-    train_and_eval(test_x_raw, train_raw, test_y)
+    file_dir =  paste0('fold_', as.character(fold_num))
+    test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv'))
+    train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
+    print(file_dir)
+    print(test)
+    print(train)
+    #test_y = read.csv(paste0('Proj2_Data/test_with_label.csv'))
   } 
 } else {
   # only evaluate data in current directory 
-  test_x = read.csv(paste0('test.csv'))
-  train = read.csv(paste0('train.csv'))
-  train_and_eval(test_x, train, NULL)
+  test_y = read.csv(paste0('Proj2_Data/test_with_label.csv'))
 }
