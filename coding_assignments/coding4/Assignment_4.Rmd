@@ -112,13 +112,13 @@ The Baum-Welch Algorihtm is the EM algorithm for the HMM. Create a function name
 # forward/backward algorithms from https://www.adeveloperdiary.com/data-science/machine-learning/forward-and-backward-algorithm-in-hidden-markov-model/
 
 forward_prob = function(x, params) {
-  # Calculate first row
   T = length(x)
   A = params$A
   B = params$B
   w = params$w
   mz = params$mz
   
+  # Calculate first row
   alpha = matrix(0, T, mz)
   alpha[1,] = w*B[, x[1]]
   
@@ -132,18 +132,19 @@ forward_prob = function(x, params) {
 }
 
 backward_prob = function(x, params) {
-  # Initialize beta as a matrix of ones, since the last row is all ones
   T = length(x)
   A = params$A
   B = params$B
   w = params$w
   mz = params$mz
+  
+  # Initialize beta as a matrix of ones, since the last row is all ones
   beta = matrix(1, T, mz)
   
   # Recursive part, but backwards
   for(t in (T-1):1) {
     temp = as.matrix(beta[t+1,]*B[, x[t+1]])
-    beta[t, ] = t(A %*% temp)
+    beta[t,] = t(A %*% temp)
   }
   
   return(beta)
@@ -154,8 +155,8 @@ BW.onestep = function(x, params) {
   A = params$A
   B = params$B
   w = params$w
-  mz = params$mz
   mx = params$mx
+  mz = params$mz
   
   # Compute forward, backward probabilities
   alpha = forward_prob(x, params)
@@ -166,7 +167,7 @@ BW.onestep = function(x, params) {
   for(t in 1:(T-1)) {
     for(i in 1:mz) {
       for(j in 1:mz) {
-        gamma[i,j,t] = alpha[t, i] * A[i, j] * B[j, x[t+1]] * beta[t+1, j]
+        gamma[i, j, t] = alpha[t, i] * A[i, j] * B[j, x[t+1]] * beta[t+1, j]
       }
     }
   }
@@ -208,7 +209,6 @@ Output:
 - Z: A T-by-1 sequence where each entry is a number ranging from 1 to mz.
 
 ```{r part2-2, eval = TRUE}
-# params is mx, mz, w, A, B
 myViterbi = function(data, params) {
   T = length(data)
   A = params$A
@@ -224,7 +224,7 @@ myViterbi = function(data, params) {
   # Recursive formula, super similar to alpha calculation from BW
   for(t in 2:T) {
     for(i in 1:mz) {
-      delta[t,i] = max(delta[t-1,] + log(A[,i])) + log(B[i, data[t]]) 
+      delta[t, i] = max(delta[t-1,] + log(A[, i])) + log(B[i, data[t]]) 
     }
   }
   
@@ -246,28 +246,29 @@ myViterbi = function(data, params) {
 ```{r part2-3, eval = TRUE}
 data = scan("coding4_part2_data.txt")
 
-mz = 2
-mx = 3
 A = matrix(1, mz, mz)
 B = matrix(1:6, mz, mx)
 w = rep(1, mz)
 
-# Initialize A, B, w
+# Initialize A, B, w, mx, mz
 A = A / rowSums(A)
 B = B / rowSums(B)
 w = w / sum(w)
+mz = 2
+mx = 3
 
-params = list(mz = mz,
-              mx = mx,
+params = list(A = A,
+              B = B,
               w = w,
-              A = A,
-              B = B)
+              mx = mx,
+              mz = mz
+              )
 
 # Get output
 output = myBW(data, params)
 Z = myViterbi(data, output)
 
-output
+output$A
+output$B
 Z
-
 ```
