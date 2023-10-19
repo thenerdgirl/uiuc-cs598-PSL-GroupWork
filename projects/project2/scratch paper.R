@@ -69,3 +69,38 @@ for (i in 1:num_folds) {
   file_path = paste0('Proj2_Data/fold_', i, '/mypred.csv')
   file.remove(file_path)
 }
+
+# Use approach 2
+num_folds <- 10
+for (i in 1:num_folds) {
+  file_path = paste0('Proj2_Data/fold_', i, '/train.csv')
+  train = read.csv(file_path)
+  
+  file_path = paste0('Proj2_Data/fold_', i, '/test.csv')
+  test = read.csv(file_path)
+  
+  start_last_year = as.Date(min(test$Date)) - 375
+  end_last_year = as.Date(max(test$Date)) - 350
+  
+  tmp_train <- train %>%
+    filter(Date > start_last_year & Date < end_last_year) %>%
+    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    rename(Weekly_Pred = Weekly_Sales) %>%
+    select(-Date, -IsHoliday)
+  
+  test <- test %>%
+    mutate(Wk = week(Date))
+  
+  test_pred <- test %>%
+    left_join(tmp_train, by = c('Dept', 'Store', 'Wk')) %>%
+    select(-Wk)
+  
+  id = is.na(test_pred$Weekly_Pred)
+  test_pred$Weekly_Pred[id] = 0
+  
+  file_path = paste0('Proj2_Data/fold_', i, '/mypred.csv')
+  readr::write_csv(test_pred, file_path)
+}
+
+
+
