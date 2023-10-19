@@ -24,7 +24,23 @@ DEBUG = TRUE
 
 set.seed(235)
 
+department_matrix = function(train_data, d){
+  matrix = train_data %>%
+    filter(Dept == d) %>%
+    select(Store, Date, Weekly_Sales) %>%
+    spread(Store, Weekly_Sales)
+  
+  if(DEBUG) {
+    print(matrix)
+  } 
+  
+  return(matrix)
+}
 
+get_depts = function(train_data){
+  depts = unique(train_data$Dept)
+  return(depts)
+}
 ############## Evaluation Function ############## 
 evaluation = function(){
   test_w_label_path = paste0('Proj2_Data/test_with_label.csv')
@@ -43,7 +59,7 @@ evaluation = function(){
     
     test_pred = read.csv(paste0('Proj2_Data/', file_dir, '/mypred.csv'))
     
-    new_test <- test %>%
+    new_test = test %>%
       left_join(test_pred, by = c('Date', 'Store', 'Dept'))
     
     actuals = new_test$Weekly_Sales
@@ -71,13 +87,17 @@ if(DEBUG) {
 fold_count = 10
 for (fold_num in 1:fold_count) {
   
-  file_dir =  paste0('fold_', as.character(fold_num))
+  file_dir = paste0('fold_', as.character(fold_num))
 
   train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
   
   start_last_year = as.Date(min(test$Date)) - 375
   end_last_year = as.Date(max(test$Date)) - 350
+  
+  depts = get_depts(train)
+  print(depts)
+  department_matrix(train,1)
   
   tmp_train = train %>%
     filter(Date > start_last_year & Date < end_last_year) %>%
