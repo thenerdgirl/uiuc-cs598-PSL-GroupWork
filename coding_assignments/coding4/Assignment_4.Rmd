@@ -109,7 +109,7 @@ Implement the Baum-Welch (i.e., EM) algorithm and the Viterbi algorithm from scr
 The Baum-Welch Algorihtm is the EM algorithm for the HMM. Create a function named BW.onestep designed to carry out the E-step and M-step. This function should then be called iteratively within myBW.
 
 ```{r part2-1, eval = TRUE}
-# forward/backward algorithms from https://www.adeveloperdiary.com/data-science/machine-learning/forward-and-backward-algorithm-in-hidden-markov-model/
+# forward/backward algorithms adapted from https://www.adeveloperdiary.com/data-science/machine-learning/forward-and-backward-algorithm-in-hidden-markov-model/
 
 forward_prob = function(x, params) {
   T = length(x)
@@ -189,7 +189,7 @@ BW.onestep = function(x, params) {
   return(params)
 }
 
-myBW = function(x, params, itmax = 100) {
+myBW = function(x, params, itmax) {
   for(i in 1:itmax) {
     params = BW.onestep(x, params)
   }
@@ -246,16 +246,16 @@ myViterbi = function(data, params) {
 ```{r part2-3, eval = TRUE}
 data = scan("coding4_part2_data.txt")
 
-A = matrix(1, mz, mz)
-B = matrix(1:6, mz, mx)
-w = rep(1, mz)
-
-# Initialize A, B, w, mx, mz
-A = A / rowSums(A)
-B = B / rowSums(B)
-w = w / sum(w)
 mz = 2
 mx = 3
+
+A = matrix(1, mz, mz)
+B = matrix(1:6, mz, mx)
+w = c(0.5, 0.5)
+
+# Initialize A, B
+A = A / rowSums(A)
+B = B / rowSums(B)
 
 params = list(A = A,
               B = B,
@@ -265,7 +265,7 @@ params = list(A = A,
               )
 
 # Get output
-output = myBW(data, params)
+output = myBW(data, params, 100)
 Z = myViterbi(data, output)
 
 output$A
