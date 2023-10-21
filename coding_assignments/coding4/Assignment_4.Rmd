@@ -27,7 +27,7 @@ Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/432)
 
 ```{r setup, eval = TRUE}
 # add required packages
-packages = c('')
+packages = c()
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
@@ -98,6 +98,36 @@ myEM = function(data, G, init_params, itmax) {
   return(init_params)
 }
 ```
+
+
+
+## Part1-5: Testing
+```{r part1-5, eval = TRUE}
+
+# Case 1: G = 2. Using variables from assignment
+G = 2
+p1 = 10/n
+p2 = 1 - p1
+u1 = 5 #@todo fix me
+u2 = 7 #@todo fix me
+
+max_iteration = 20
+
+
+
+
+# Case 2: G = 3
+G = 3
+p1 = 10/n
+p2 = 1 - p1
+u1 = 5 #@todo fix me
+u2 = 7 #@todo fix me
+
+max_iteration = 20
+
+
+```
+
 
 
 # Part 2: HMM
