@@ -34,36 +34,35 @@ department_matrix = function(train_data, d){
     filter(Dept == d) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
-  
-  if(DEBUG) {
-    print(matrix)
-  } 
-  
+  if(DEBUG) { print(matrix) } 
   return(matrix)
 }
 
 dept_svd = function(X){
-  d = min(length(X)-1, nrow(X), 8)
-  cat(length(X)-1, nrow(X),d)
+  m = length(X)-1
+  n = nrow(X)
+  d = min(m, n, 8)
+  if(DEBUG) { cat("dept_svd 1 n",n,"m",m,"d",d,"\n") } 
   X[is.na(X)] = 0
   store_mean = rowMeans(t(X[,-1]))
   X_less_mean = t(X[,-1]) - store_mean
-  
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
   D = diag(svd_decom$d[1:d])
   Vt = t(svd_decom$v[,1:d])
-  
   X_s = U %*% D %*% Vt + store_mean
+  if(DEBUG) { cat("dept_svd 2 n",length(X_s),"m",nrow(X_s),"\n") } 
   return(X_s)
 }
 
 get_reshape <- function(Xmn,i){
+  if(DEBUG) { cat("get_reshape 1 n",length(Xmn),"m",nrow(Xmn),"\n") } 
   smoothed = as.data.frame(t(Xmn))
   colnames(smoothed) = colnames(Xi[,-1])
   smoothed$Date <- Xi[,1]
   pivot_smooth = gather(smoothed, key = "Store", value = "Prediction", -Date)
   pivot_smooth$Dept = i
+  if(DEBUG) { cat("get_reshape 2 n",length(pivot_smooth),"m",nrow(pivot_smooth),"\n") }
   return(pivot_smooth)
 }
 
@@ -77,7 +76,6 @@ evaluation = function(){
   for (fold_num in 1:fold_count) {
 
     file_dir =  paste0('fold_', as.character(fold_num))
-    
     test = read.csv(paste0('Proj2_Data/', file_dir, '/test.csv'))
     test =  test %>%
       select(-IsHoliday) %>%
@@ -93,13 +91,9 @@ evaluation = function(){
     weights = if_else(new_test$IsHoliday.x, 5, 1)
     wae[fold_num] = sum(weights * abs(actuals - predictions)) / sum(weights)
   }
-  if(DEBUG) {
-    # print table header
-    cat('fold',fold_num,wae,'\n')
-  } 
+  if(DEBUG) { cat('fold',fold_num,wae,'\n') } 
   return(wae)
 }
-
 
 
 ############## Prediction Script Body ############## 
@@ -115,25 +109,17 @@ for (fold_num in 1:fold_count) {
   
   file_dir = paste0('fold_', as.character(fold_num))
   predictions = data.frame()
-  
-  if(DEBUG) {
-    print("reached fold ")
-    print(fold_num)
-  } 
-  
+  if(DEBUG) { cat("reached fold ",fold_num) } 
   train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
   depts = get_depts(train)
   
-  if(DEBUG) {
-    print("loaded data. Departments are")
-    print(depts)
-  } 
+  if(DEBUG) { cat("loaded data. Departments are",depts,"\n") } 
   
   for(i in depts){
-    if(DEBUG) {
-      print("department")
-      print(i)
+    if(DEBUG) { 
+      print("department") 
+      print(i) 
     } 
     dept=i
     Xi = department_matrix(train,dept)
@@ -141,6 +127,7 @@ for (fold_num in 1:fold_count) {
     dept_preds = get_reshape(X_smoothed,dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
+    if(DEBUG) { cat("loop end n",length(predictions),"m",nrow(predictions),"\n") }
   }
   
   start_last_year = as.Date(min(test$Date)) - 375
@@ -162,30 +149,10 @@ for (fold_num in 1:fold_count) {
   id = is.na(test_pred$Weekly_Pred)
   test_pred$Weekly_Pred[id] = 0
   
-  if(DEBUG) {
-  # print table header
-  cat('fold',fold_num,'\n')
-  } 
+  if(DEBUG) { cat('fold',fold_num,'\n') } 
   
   pred_path = paste0('Proj2_Data/', file_dir, '/mypred.csv')
   readr::write_csv(test_pred, pred_path)
-  
-  if(!DEBUG) {
-    print("start_last_year")
-    print(start_last_year)
-    print(min(test$Date))
-    print("end_last_year")    
-    print(end_last_year)   
-    print(max(test$Date))
-    print("train")
-    print(head(train))
-    print("tmp_train")
-    print(head(tmp_train))
-    #print("test")
-    #print(head(test))
-    print("test_pred")
-    print(head(test_pred))
-  } 
 }
 
 ############## Evaluate Forecast and Estimate Grade ############## 
