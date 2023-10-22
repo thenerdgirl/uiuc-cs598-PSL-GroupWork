@@ -46,12 +46,18 @@ dept_svd = function(X){
   X[is.na(X)] = 0
   store_mean = rowMeans(t(X[,-1]))
   X_less_mean = t(X[,-1]) - store_mean
+
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
   D = diag(svd_decom$d[1:d])
   Vt = t(svd_decom$v[,1:d])
+  if(DEBUG) { 
+    cat("dept_svd 2 U",nrow(U),"x",length(U),
+        "D",nrow(D),"x",length(D),
+        "Vt",nrow(Vt),"x",length(Vt),
+        "\n") } 
   X_s = U %*% D %*% Vt + store_mean
-  if(DEBUG) { cat("dept_svd 2 n",length(X_s),"m",nrow(X_s),"\n") } 
+  if(DEBUG) { cat("dept_svd 3 n",length(X_s),"m",nrow(X_s),"\n") } 
   return(X_s)
 }
 
