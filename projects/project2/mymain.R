@@ -34,28 +34,38 @@ department_matrix = function(train_data, d){
     filter(Dept == d) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
-  #if(DEBUG) { print(colnames(matrix)) } 
+  if(DEBUG) { cat("department matrix: n",nrow(matrix),"m",ncol(matrix)) } 
   return(matrix)
 }
 
 dept_svd = function(X){
-  m = length(X)-1
+  m = ncol(X)-1
   n = nrow(X)
   d = min(m, n, 8)
   if(DEBUG) { cat("dept_svd 1 n",n,"m",m,"d",d,"\n") } 
   X[is.na(X)] = 0
-  store_mean = rowMeans(t(X[,-1]))
-  X_less_mean = t(X[,-1]) - store_mean
-
+  if(DEBUG) { cat("dept_svd 2 n",nrow(X),"m",ncol(X)-1,"d\n") } 
+  data = X[,-1]
+  data_t = t(data)
+  print(data_t)
+  store_mean = rowMeans(data_t)
+  X_less_mean = data_t - store_mean
+  if(DEBUG) { cat("dept_svd t(X[,-1]",nrow(t(X[,-1])),"m",length(t(X[,-1])),"s",length(store_mean),"\n") } 
+  if(DEBUG) { cat("dept_svd X_less n",nrow(X_less_mean),"m",length(X_less_mean),"\n") } 
+  if(DEBUG) { cat("dept_svd data   n",nrow(data_t),"m",ncol(data_t),"\n") } 
+  if(DEBUG) { cat("dept_svd data_t n",nrow(data_t),"m",length(data_t),"\n") } 
+  if(DEBUG) { cat("dept_svd c n",class(X),"\n") } 
+  if(DEBUG) { cat("dept_svd d n",class(X_less_mean),"\n") } 
+  
   if(min(n,m)>1){
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
   D = diag(svd_decom$d[1:d])
   Vt = t(svd_decom$v[,1:d])
   if(DEBUG) { 
-    cat("dept_svd 2 U",nrow(svd_decom$u),"x",length(svd_decom$u),
-        "D",nrow(svd_decom$d),"x",length(svd_decom$d),
-        "Vt",nrow(svd_decom$v),"x",length(svd_decom$v),"\n") } 
+    cat("dept_svd 2 U",nrow(svd_decom$u),"x",ncol(svd_decom$u),
+        "D",length(svd_decom$d),"x",length(svd_decom$d),
+        "Vt",nrow(svd_decom$v),"x",ncol(svd_decom$v),"\n") } 
   X_s = U %*% D %*% Vt + store_mean
   } else {
   X_s =  X_less_mean + store_mean
@@ -68,19 +78,19 @@ get_reshape = function(Xmn,column_names,i){
   if(DEBUG) { cat("get_reshape 1 n",length(Xmn),"m",nrow(Xmn),"\n") } 
   
   smoothed = as.data.frame(t(Xmn))
-  if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
-  if(DEBUG) { 
-    cat("get_reshape 3 n ")
-    print(column_names)
-  } 
+  #if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
+  #if(DEBUG) { 
+  #  cat("get_reshape 3 n ")
+  #  print(column_names)
+  #} 
   
   colnames(smoothed) = column_names
-  if(DEBUG) { cat("get_reshape 4 n",nrow(Xi),"m",length(Xi),"\n") } 
-  print(colnames(smoothed))
+  #if(DEBUG) { cat("get_reshape 4 n",nrow(Xi),"m",length(Xi),"\n") } 
+  #print(colnames(smoothed))
   
   smoothed$Date = Xi[,1]
-  if(DEBUG) { cat("get_reshape 5 n",nrow(smoothed),"m",length(smoothed),"\n") } 
-  print(smoothed)
+  #if(DEBUG) { cat("get_reshape 5 n",nrow(smoothed),"m",length(smoothed),"\n") } 
+  #print(smoothed)
   
   pivot_smooth = gather(smoothed, key = "Store", value = "Prediction", -Date)
   if(DEBUG) { cat("get_reshape 6 n",nrow(pivot_smooth),"m",length(pivot_smooth),"\n") } 
@@ -162,7 +172,7 @@ for (fold_num in 1:fold_count) {
     filter(Date > start_last_year & Date < end_last_year) %>%
     mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
     rename(Weekly_Pred = Prediction) %>%
-    select(-Date, -IsHoliday)
+    select(-Date, -IsHoliday, -Weekly_Sales)
   
   test_wk = test %>%
     mutate(Wk = week(Date))
