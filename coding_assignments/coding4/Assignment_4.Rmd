@@ -90,12 +90,16 @@ loglik = function(data, G, init_params) {
 ```{r part1-4, eval = TRUE}
 myEM = function(data, G, init_params, itmax) {
   for(i in 1:itmax) {
-    post_prob = Estep(data, G, init_params)
-    init_params = Mstep(data, G, init_params, post_prob)
+    #post_prob = Estep(data, G, init_params)
+    #out_params = Mstep(data, G, init_params, post_prob)
   }
+  
+  out_params = init_params
 
-  init_params$loglik = loglik(data, G, init_params)
-  return(init_params)
+  # add loglik to list of outputs and return 
+  out_params[[loglik]] = loglik(data, G, init_params)
+
+  return(out_params)
 }
 ```
 
@@ -120,13 +124,16 @@ x2 = as.matrix(test_df[11:n,])
 u1 = colMeans(x1)
 u2 = colMeans(x2)
 
-# calculate epsilon using provided eqn
-epsilon = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2))
+# calculate sigma using provided eqn
+sigma = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2))
 
 max_iteration = 20
 
+# gather initial params into list
+initial = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+
 # evaluate 
-out = myEM(data=test_df, G=G, init_params=u1, itmax=max_iterations)
+out = myEM(data=test_df, G=G, init_params=initial, itmax=max_iteration)
 
 
 
