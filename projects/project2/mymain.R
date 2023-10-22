@@ -34,7 +34,7 @@ department_matrix = function(train_data, d){
     filter(Dept == d) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
-  if(DEBUG) { print(matrix) } 
+  #if(DEBUG) { print(colnames(matrix)) } 
   return(matrix)
 }
 
@@ -47,28 +47,46 @@ dept_svd = function(X){
   store_mean = rowMeans(t(X[,-1]))
   X_less_mean = t(X[,-1]) - store_mean
 
+  if(min(n,m)>1){
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
   D = diag(svd_decom$d[1:d])
   Vt = t(svd_decom$v[,1:d])
   if(DEBUG) { 
-    cat("dept_svd 2 U",nrow(U),"x",length(U),
-        "D",nrow(D),"x",length(D),
-        "Vt",nrow(Vt),"x",length(Vt),
-        "\n") } 
+    cat("dept_svd 2 U",nrow(svd_decom$u),"x",length(svd_decom$u),
+        "D",nrow(svd_decom$d),"x",length(svd_decom$d),
+        "Vt",nrow(svd_decom$v),"x",length(svd_decom$v),"\n") } 
   X_s = U %*% D %*% Vt + store_mean
+  } else {
+  X_s =  X_less_mean + store_mean
+  }
   if(DEBUG) { cat("dept_svd 3 n",length(X_s),"m",nrow(X_s),"\n") } 
   return(X_s)
 }
 
-get_reshape <- function(Xmn,i){
+get_reshape = function(Xmn,column_names,i){
   if(DEBUG) { cat("get_reshape 1 n",length(Xmn),"m",nrow(Xmn),"\n") } 
+  
   smoothed = as.data.frame(t(Xmn))
-  colnames(smoothed) = colnames(Xi[,-1])
-  smoothed$Date <- Xi[,1]
+  if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
+  if(DEBUG) { 
+    cat("get_reshape 3 n ")
+    print(column_names)
+  } 
+  
+  colnames(smoothed) = column_names
+  if(DEBUG) { cat("get_reshape 4 n",nrow(Xi),"m",length(Xi),"\n") } 
+  print(colnames(smoothed))
+  
+  smoothed$Date = Xi[,1]
+  if(DEBUG) { cat("get_reshape 5 n",nrow(smoothed),"m",length(smoothed),"\n") } 
+  print(smoothed)
+  
   pivot_smooth = gather(smoothed, key = "Store", value = "Prediction", -Date)
+  if(DEBUG) { cat("get_reshape 6 n",nrow(pivot_smooth),"m",length(pivot_smooth),"\n") } 
+  
   pivot_smooth$Dept = i
-  if(DEBUG) { cat("get_reshape 2 n",length(pivot_smooth),"m",nrow(pivot_smooth),"\n") }
+  #if(DEBUG) { cat("get_reshape 7 n",length(pivot_smooth),"m",nrow(pivot_smooth),"\n") }
   return(pivot_smooth)
 }
 
@@ -129,11 +147,12 @@ for (fold_num in 1:fold_count) {
     } 
     dept=i
     Xi = department_matrix(train,dept)
+    cn=colnames(Xi[-1])
     X_smoothed = dept_svd(Xi)
-    dept_preds = get_reshape(X_smoothed,dept)
+    dept_preds = get_reshape(X_smoothed,cn,dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
-    if(DEBUG) { cat("loop end n",length(predictions),"m",nrow(predictions),"\n") }
+    if(DEBUG) { cat("loop end n",nrow(predictions),"m",length(predictions),"\n") }
   }
   
   start_last_year = as.Date(min(test$Date)) - 375
