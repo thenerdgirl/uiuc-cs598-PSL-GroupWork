@@ -10,7 +10,7 @@
 
 #######  load libraries  ####### 
 # packages to load
-packages = c('lubridate', 'tidyverse','glmnet', 'xgboost')
+packages = c('tidyverse')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
@@ -34,7 +34,8 @@ department_matrix = function(train_data, d){
     filter(Dept == d) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
-  if(DEBUG) { cat("department matrix: n",nrow(matrix),"m",ncol(matrix)) } 
+  
+  #if(DEBUG) { cat("department matrix: n",nrow(matrix),"m",ncol(matrix)) } 
   return(matrix)
 }
 
@@ -42,20 +43,19 @@ dept_svd = function(X){
   m = ncol(X)-1
   n = nrow(X)
   d = min(m, n, 8)
-  if(DEBUG) { cat("dept_svd 1 n",n,"m",m,"d",d,"\n") } 
+  #if(DEBUG) { cat("dept_svd 1 n",n,"m",m,"d",d,"\n") } 
+  
   X[is.na(X)] = 0
-  if(DEBUG) { cat("dept_svd 2 n",nrow(X),"m",ncol(X)-1,"d\n") } 
-  data = X[,-1]
-  data_t = t(data)
-  print(data_t)
-  store_mean = rowMeans(data_t)
-  X_less_mean = data_t - store_mean
-  if(DEBUG) { cat("dept_svd t(X[,-1]",nrow(t(X[,-1])),"m",length(t(X[,-1])),"s",length(store_mean),"\n") } 
-  if(DEBUG) { cat("dept_svd X_less n",nrow(X_less_mean),"m",length(X_less_mean),"\n") } 
-  if(DEBUG) { cat("dept_svd data   n",nrow(data_t),"m",ncol(data_t),"\n") } 
-  if(DEBUG) { cat("dept_svd data_t n",nrow(data_t),"m",length(data_t),"\n") } 
-  if(DEBUG) { cat("dept_svd c n",class(X),"\n") } 
-  if(DEBUG) { cat("dept_svd d n",class(X_less_mean),"\n") } 
+  #if(DEBUG) { cat("dept_svd 2 n",nrow(X),"m",ncol(X)-1,"d\n") } 
+  
+  store_mean = rowMeans(t(X[,-1]))
+  X_less_mean = t(X[,-1]) - store_mean
+  #if(DEBUG) { cat("dept_svd t(X[,-1]",nrow(t(X[,-1])),"m",length(t(X[,-1])),"s",length(store_mean),"\n") } 
+  #if(DEBUG) { cat("dept_svd X_less n",nrow(X_less_mean),"m",length(X_less_mean),"\n") } 
+  #if(DEBUG) { cat("dept_svd data   n",nrow(data_t),"m",ncol(data_t),"\n") } 
+  #if(DEBUG) { cat("dept_svd data_t n",nrow(data_t),"m",length(data_t),"\n") } 
+  #if(DEBUG) { cat("dept_svd c n",class(X),"\n") } 
+  #if(DEBUG) { cat("dept_svd d n",class(X_less_mean),"\n") } 
   
   if(min(n,m)>1){
   svd_decom = svd(X_less_mean)
@@ -70,12 +70,14 @@ dept_svd = function(X){
   } else {
   X_s =  X_less_mean + store_mean
   }
-  if(DEBUG) { cat("dept_svd 3 n",length(X_s),"m",nrow(X_s),"\n") } 
+  
+  #print(X_s)
+  #if(DEBUG) { cat("dept_svd 3 n",length(X_s),"m",nrow(X_s),"\n") } 
   return(X_s)
 }
 
 get_reshape = function(Xmn,column_names,i){
-  if(DEBUG) { cat("get_reshape 1 n",length(Xmn),"m",nrow(Xmn),"\n") } 
+  if(DEBUG) { cat("get_reshape 1 n",nrow(Xmn),"m",ncol(Xmn),"\n") } 
   
   smoothed = as.data.frame(t(Xmn))
   #if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
@@ -93,7 +95,7 @@ get_reshape = function(Xmn,column_names,i){
   #print(smoothed)
   
   pivot_smooth = gather(smoothed, key = "Store", value = "Prediction", -Date)
-  if(DEBUG) { cat("get_reshape 6 n",nrow(pivot_smooth),"m",length(pivot_smooth),"\n") } 
+  #if(DEBUG) { cat("get_reshape 6 n",nrow(pivot_smooth),"m",length(pivot_smooth),"\n") } 
   
   pivot_smooth$Dept = i
   #if(DEBUG) { cat("get_reshape 7 n",length(pivot_smooth),"m",nrow(pivot_smooth),"\n") }
@@ -151,10 +153,7 @@ for (fold_num in 1:fold_count) {
   if(DEBUG) { cat("loaded data. Departments are",depts,"\n") } 
   
   for(i in depts){
-    if(DEBUG) { 
-      print("department") 
-      print(i) 
-    } 
+    if(DEBUG) { cat("department",i,"\n") } 
     dept=i
     Xi = department_matrix(train,dept)
     cn=colnames(Xi[-1])
@@ -162,7 +161,7 @@ for (fold_num in 1:fold_count) {
     dept_preds = get_reshape(X_smoothed,cn,dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
-    if(DEBUG) { cat("loop end n",nrow(predictions),"m",length(predictions),"\n") }
+    if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
   }
   
   start_last_year = as.Date(min(test$Date)) - 375
@@ -184,7 +183,20 @@ for (fold_num in 1:fold_count) {
   id = is.na(test_pred$Weekly_Pred)
   test_pred$Weekly_Pred[id] = 0
   
-  if(DEBUG) { cat('fold',fold_num,'\n') } 
+  tmp_train1 = predictions %>%
+    filter(Date > start_last_year & Date < end_last_year) %>%
+    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    rename(Weekly_Pred = Prediction) %>%
+    select(-IsHoliday)
+  
+  test_pred1 = test_wk %>%
+    left_join(tmp_train, by = c('Dept', 'Store', 'Wk')) 
+  
+  print(tmp_train1)
+  print(test_pred1)
+  
+  if(DEBUG) { cat("fold",fold_num,"test_wk",nrow(test_wk),"m",ncol(test_wk),"\n") }
+  if(DEBUG) { cat("fold",fold_num,"test_pred",nrow(test_pred),"m",ncol(test_pred),"\n") }
   
   pred_path = paste0('Proj2_Data/', file_dir, '/mypred.csv')
   readr::write_csv(test_pred, pred_path)
@@ -224,3 +236,17 @@ if(DEBUG) {
     cat('A+ 100% Perfection')
   }
 } 
+
+
+
+testpredictions = data.frame()
+fold_count = 10
+for (fold_num in 1:fold_count) {
+  file_dir = paste0('fold_', as.character(fold_num))
+  test_pred = read.csv(paste0('Proj2_Data/', file_dir, '/mypred.csv'))
+  testpredictions = rbind(testpredictions, test_pred)
+  #print(test_pred)
+}    
+#readr::write_csv(  testpredictions, 'Proj2_Data/testpred.csv')
+
+
