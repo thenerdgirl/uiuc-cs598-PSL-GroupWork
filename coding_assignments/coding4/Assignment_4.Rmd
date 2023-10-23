@@ -75,6 +75,33 @@ This function should return the updated parameters for the Gaussian mixture mode
 
 ```{r part1-2, eval = TRUE}
 Mstep = function(data, G, init_params, post_prob) {
+  
+  out_params = init_params
+  
+  # update means
+  numerator = t(data) %*% post_prob
+  denom = colSums(post_prob)
+  # we want to perform elementwise division, but by rows instead of cols
+  new_mean = sweep(numerator, 2, denom, "/")
+  out_params[['mean']] = new_mean
+  
+  
+  
+  S = matrix(0, nrow=ncol(data), ncol=G)
+  n = nrow(data)
+  
+  # iterate through G
+  for (k in 1:G) {
+    u = init_params$mean[, k]
+    p = post_prob[, k]
+    
+    tmp = data - u
+    
+    S = S + t(tmp) %*% diag(p) %*% tmp
+  }
+  
+  sigma_max = solve(n / S)
+  
 
 }
 ```
@@ -109,11 +136,13 @@ loglik = function(data, G, init_params) {
     
     likelihood = p * numerator / denom
   
-    g_sum = g_sum + log(likelihood)
+    g_sum = g_sum + likelihood
   }
   
   # now return sum of all log liks
-  out = sum(g_sum)
+  logged = log(g_sum)
+  
+  out = sum(logged)
   return(out)
 }
 ```
