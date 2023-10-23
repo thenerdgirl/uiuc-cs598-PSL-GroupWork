@@ -48,12 +48,25 @@ This function should return an n-by-G matrix, where the (i, j)th entry represent
 
 ```{r part1-1, eval = TRUE}
 Estep = function(data, G, init_params) {
-  # Use Approach 2
+  # Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
   A = t(data) # transpose of the data matrix
-  temp = matrix(0, nrow=nrow(data), ncol=G)
-  for(i in 1:G) {
-    mu = init_params$mean[,k]
+  
+  # our n-by-G output matrix
+  out = matrix(0, nrow=nrow(data), ncol=G)
+  
+  # iterate through G
+  for (k in 1:G) {
+    # these steps are outlined in the campuswire post linked above
+    demeaned = (A - init_params$mean[, k])
+    matrix_multiplied = solve(init_params$Sigma) %*% demeaned
+    element_multiplied = matrix_multiplied * demeaned
+    summed = colSums(element_multiplied)
+    
+    # now concat the columns
+    out[, k] = summed 
   }
+  
+  return(out)
 }
 ```
 
@@ -70,9 +83,36 @@ Mstep = function(data, G, init_params, post_prob) {
 This function computes the log-likelihood of the data given the parameters.
 ```{r part1-3, eval = TRUE}
 loglik = function(data, G, init_params) {
-  A = t(data)
-  P = ncol(data)
-  temp = matrix(0, nrow)
+  
+  # iterate over G and sum
+  out = rep(0, nrow(data))
+  for (k in 1:G) {
+    # rename vars to make equation align better
+    x = data
+    u = init_params$mean[, k]
+    sigma = init_params$Sigma
+    p = init_params$prob[k]
+    d = ncol(x) # data dimensions 
+    
+    # Once again use Approach 2 to calculate gaussian (https://campuswire.com/c/G06C55090/feed)
+    
+    # these steps are outlined in the campuswire post linked above
+    A = t(x)
+    demeaned = (A - init_params$mean[, k])
+    matrix_multiplied = solve(sigma) %*% demeaned
+    element_multiplied = matrix_multiplied * demeaned
+    summed = colSums(element_multiplied)
+    
+    # equation from assigment
+    numerator = exp(-(1/2) * summed)
+    denom = sqrt(2 * pi^d * det(sigma))
+    
+    likelihood = p * numerator / denom
+  
+    g_sum = g_sum + log(likelihood)
+  }
+  
+  return out
 }
 ```
 
@@ -87,10 +127,11 @@ loglik = function(data, G, init_params) {
 - mean: A p-by-G matrix with the k-th column being μk, the p-dimensional mean for the k-th Gaussian component.
 - Sigma: A p-by-p covariance matrix Σ shared by all G components;
 - loglik: A number equal to ∑ni=1log[∑Gk=1pk⋅N(x;μk,Σ)].
+
 ```{r part1-4, eval = TRUE}
 myEM = function(data, G, init_params, itmax) {
   for(i in 1:itmax) {
-    #post_prob = Estep(data, G, init_params)
+    post_prob = Estep(data, G, init_params)
     #out_params = Mstep(data, G, init_params, post_prob)
   }
   
@@ -133,7 +174,10 @@ max_iteration = 20
 initial = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
 
 # evaluate 
-out = myEM(data=test_df, G=G, init_params=initial, itmax=max_iteration)
+out = myEM(data=as.matrix(test_df), 
+           G=G, 
+           init_params=initial, 
+           itmax=max_iteration)
 
 
 
