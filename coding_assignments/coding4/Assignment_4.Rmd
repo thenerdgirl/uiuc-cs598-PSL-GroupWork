@@ -85,7 +85,7 @@ This function computes the log-likelihood of the data given the parameters.
 loglik = function(data, G, init_params) {
   
   # iterate over G and sum
-  out = rep(0, nrow(data))
+  g_sum = rep(0, nrow(data))
   for (k in 1:G) {
     # rename vars to make equation align better
     x = data
@@ -112,7 +112,9 @@ loglik = function(data, G, init_params) {
     g_sum = g_sum + log(likelihood)
   }
   
-  return out
+  # now return sum of all log liks
+  out = sum(g_sum)
+  return(out)
 }
 ```
 
@@ -132,13 +134,13 @@ loglik = function(data, G, init_params) {
 myEM = function(data, G, init_params, itmax) {
   for(i in 1:itmax) {
     post_prob = Estep(data, G, init_params)
-    #out_params = Mstep(data, G, init_params, post_prob)
+    init_params = Mstep(data, G, init_params, post_prob)
   }
   
   out_params = init_params
 
   # add loglik to list of outputs and return 
-  out_params[[loglik]] = loglik(data, G, init_params)
+  out_params[['loglik']] = loglik(data, G, init_params)
 
   return(out_params)
 }
@@ -151,6 +153,7 @@ myEM = function(data, G, init_params, itmax) {
 # load datset
 test_df = read.table('faithful.dat')
 n = nrow(test_df)
+data=as.matrix(test_df)
 
 ###### Case 1: G = 2. Using variables from assignment ###### 
 G = 2
@@ -168,16 +171,16 @@ u2 = colMeans(x2)
 # calculate sigma using provided eqn
 sigma = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2))
 
-max_iteration = 20
+itmax = 20
 
 # gather initial params into list
-initial = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
 
 # evaluate 
-out = myEM(data=as.matrix(test_df), 
+out = myEM(data=data, 
            G=G, 
-           init_params=initial, 
-           itmax=max_iteration)
+           init_params=init_params, 
+           itmax=itmax)
 
 
 
