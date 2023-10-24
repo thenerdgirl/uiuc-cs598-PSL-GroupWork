@@ -24,11 +24,15 @@ DEBUG = TRUE
 
 set.seed(235)
 
+#######  Functions Called in Main  ####### 
+
+# provides a unique list of departments to loop through
 get_depts = function(train_data){
   depts = unique(train_data$Dept)
   return(depts)
 }
 
+# filters data to given department and pivots into matrix with date/week and store number as rows/columns
 department_matrix = function(train_data, d){
   matrix = train_data %>%
     filter(Dept == d) %>%
@@ -39,6 +43,7 @@ department_matrix = function(train_data, d){
   return(matrix)
 }
 
+# Replaces na values with 0. Get average sales for store. Create SVD.
 dept_svd = function(X){
   m = ncol(X)-1
   n = nrow(X)
@@ -57,6 +62,10 @@ dept_svd = function(X){
   #if(DEBUG) { cat("dept_svd c n",class(X),"\n") } 
   #if(DEBUG) { cat("dept_svd d n",class(X_less_mean),"\n") } 
   
+  # implements SVD unless there is either one row or column
+  # selects top 8 dimensions or row/column width if either is less than 8
+  # If rows or columns have one entry, it just returns the matrix
+  # I'm really not confident this is all done right, but it was done to ensure it works.
   if(min(n,m)>1){
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
@@ -76,6 +85,7 @@ dept_svd = function(X){
   return(X_s)
 }
 
+# reshapes transposed and pivoted matrix back to original form with rows for date, store, and dept
 get_reshape = function(Xmn,column_names,i){
   if(DEBUG) { cat("get_reshape 1 n",nrow(Xmn),"m",ncol(Xmn),"\n") } 
   
@@ -143,6 +153,7 @@ if(DEBUG) {
 fold_count = 10
 for (fold_num in 1:fold_count) {
   
+# Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
   predictions = data.frame()
   if(DEBUG) { cat("reached fold ",fold_num) } 
@@ -151,6 +162,9 @@ for (fold_num in 1:fold_count) {
   depts = get_depts(train)
   
   if(DEBUG) { cat("loaded data. Departments are",depts,"\n") } 
+
+# Loops through departments, implements SVD for each, reshapes to original form,
+# and adds SVD results as predictions
   
   for(i in depts){
     if(DEBUG) { cat("department",i,"\n") } 
@@ -164,6 +178,7 @@ for (fold_num in 1:fold_count) {
     if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
   }
   
+# Performs offsets done in implementation #1, which seem to realign prediction weeks/dates
   start_last_year = as.Date(min(test$Date)) - 375
   end_last_year = as.Date(max(test$Date)) - 350
   
@@ -182,6 +197,8 @@ for (fold_num in 1:fold_count) {
   
   id = is.na(test_pred$Weekly_Pred)
   test_pred$Weekly_Pred[id] = 0
+  
+# Recreates prior data frames for training and predictions to print for debugging.
   
   tmp_train1 = predictions %>%
     filter(Date > start_last_year & Date < end_last_year) %>%
@@ -237,7 +254,7 @@ if(DEBUG) {
   }
 } 
 
-
+# Loop through prediction files to write to .csv for debugging.
 
 testpredictions = data.frame()
 fold_count = 10
