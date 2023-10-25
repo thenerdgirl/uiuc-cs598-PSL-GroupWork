@@ -80,7 +80,7 @@ loglik = function(data, G, init_params) {
     x = data
     u = init_params$mean[, k]
     sigma = init_params$Sigma
-    p = init_params$prob[k]
+    p = init_params$prob[k]cd
     d = ncol(x) # data dimensions 
     
     # Once again use Approach 2 to calculate gaussian (https://campuswire.com/c/G06C55090/feed)
@@ -112,16 +112,16 @@ loglik = function(data, G, init_params) {
 
 
 
-myEM = function(data, G, init_params, itmax) {
+myEM = function(data, G, in_params, itmax) {
   for(i in 1:itmax) {
-    post_prob = Estep(data, G, init_params)
-    init_params = Mstep(data, G, init_params, post_prob)
+    post_prob = Estep(data, G, in_params)
+    params = Mstep(data, G, in_params, post_prob)
   }
   
-  out_params = init_params
+  out_params = params
   
   # add loglik to list of outputs and return 
-  out_params[['loglik']] = loglik(data, G, init_params)
+  out_params[['loglik']] = loglik(data, G, in_params)
   
   return(out_params)
 }
@@ -131,6 +131,25 @@ myEM = function(data, G, init_params, itmax) {
 test_df = read.table('faithful.dat')
 n = nrow(test_df)
 data=as.matrix(test_df)
+
+
+# Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
+A = t(data) # transpose of the data matrix
+
+# our n-by-G output matrix
+out = matrix(0, nrow=nrow(data), ncol=G)
+
+# iterate through G
+for (k in 1:G) {
+  # these steps are outlined in the campuswire post linked above
+  demeaned = (A - init_params$mean[, k])
+  matrix_multiplied = solve(init_params$Sigma) %*% demeaned
+  element_multiplied = matrix_multiplied * demeaned
+  summed = colSums(element_multiplied)
+  
+  # now concat the columns
+  out[, k] = summed 
+}
 
 ###### Case 1: G = 2. Using variables from assignment ###### 
 G = 2
@@ -168,16 +187,54 @@ sigma = 1/n*((t(x1) - u1) %*% t(t(x1) - u1) + (t(x2) - u2) %*% t(t(x2) - u2) )
 itmax = 20
 
 # gather initial params into list
-init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+init_params2 = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
 
 # evaluate 
 out = myEM(data=data, 
            G=G, 
-           init_params=init_params, 
+           in_params=init_params2, 
            itmax=itmax)
 
 
 
+
+
+# Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
+A = t(data) # transpose of the data matrix
+
+# our n-by-G output matrix
+out = matrix(0, nrow=nrow(data), ncol=G)
+
+nrow(data)
+ncol(data)
+nrow(A)
+ncol(A)
+# iterate through G
+#for (k in 1:G) {
+for (k in 1:1) {
+  # these steps are outlined in the campuswire post linked above
+  demeaned = (A - init_params$mean[, k])
+  #print(demeaned)
+  matrix_multiplied = solve(init_params$Sigma) %*% demeaned
+  #print(matrix_multiplied)
+  element_multiplied = matrix_multiplied * demeaned
+  #print(element_multiplied)
+  summed = colSums(element_multiplied)
+  #print(summed)
+  # now concat the columns
+  out= matrix(summed, ncol=1)
+  print(out)
+  print(matrix_multiplied)
+  #print(demeaned)
+  #print(solve(init_params$Sigma))
+}
+
+for(i in 1:itmax) {
+  post_prob = Estep(data, G, init_params2)
+  params = Mstep(data, G, init_params2, post_prob)
+}
+
+Estep(data, G, in_params)
 
 ######  Case 2: G = 3 ###### 
 G = 3
