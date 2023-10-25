@@ -10,7 +10,7 @@
 
 #######  load libraries  ####### 
 # packages to load
-packages = c('tidyverse')
+packages = c('tidyverse','lubridate')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
