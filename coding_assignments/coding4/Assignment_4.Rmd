@@ -114,13 +114,12 @@ Mstep = function(data, G, init_params, post_prob) {
     
     tmp = t(t(data) - u)
     
-    S_temp = (p * t(tmp)) %*% tmp
+    S_temp = t(tmp) %*% diag(p) %*% tmp
     
     S = S + S_temp
   }
   
   sigma_max = S / nrow(data)
-  
   out_params$Sigma = sigma_max
   
   return(out_params)
@@ -139,6 +138,7 @@ loglik = function(data, G, init_params) {
   g_sum = rep(0, nrow(data))
   for (k in 1:G) {
     #u = init_params$mean[,k]
+    u = init_params$mean[,k]
     p = init_params$prob[k]
     
     # this is all to calculate the exponent of pdf function, using approach 2
@@ -164,7 +164,8 @@ loglik = function(data, G, init_params) {
 }
 ```
 
-## Part 1-4: myEM function (main function): Inside this function, you can call the Estep, Mstep, and loglik functions.
+## Part 1-4: myEM function (main function):  
+Inside this function, you can call the Estep, Mstep, and loglik functions.  
 ### Input
 - data: The dataset.
 - G : The number of components.
@@ -181,11 +182,10 @@ myEM = function(data, G, init_params, itmax) {
   for(i in 1:itmax) {
     post_prob = Estep(data, G, init_params)
     
+    init_params = Mstep(data, G, init_params, post_prob)
+    
     # add loglik to list of outputs and return 
     init_params[['loglik']] = loglik(data, G, init_params)
-    
-    
-    init_params = Mstep(data, G, init_params, post_prob)
   }
   
   return(init_params)
@@ -195,7 +195,8 @@ myEM = function(data, G, init_params, itmax) {
 
 
 ## Part1-5: Testing
-```{r part1-5, eval = TRUE}
+### Test Case 1: G = 2
+```{r part1-5-1, eval = TRUE}
 # load datset
 test_df = read.table('faithful.dat')
 n = nrow(test_df)
@@ -229,7 +230,10 @@ out = myEM(data=data,
            itmax=itmax)
 
 print(out)
+```
 
+### Test Case 2: G = 3
+```{r part1-5-2, eval = TRUE}
 
 ######  Case 2: G = 3 ###### 
 G = 3
@@ -265,12 +269,7 @@ out = myEM(data=data,
            itmax=itmax)
 
 print(out)
-
-
-
 ```
-
-
 
 # Part 2: HMM
 
