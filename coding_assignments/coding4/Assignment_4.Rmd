@@ -112,14 +112,15 @@ Mstep = function(data, G, init_params, post_prob) {
   for (k in 1:G) {
     u = out_params$mean[, k]
     p = post_prob[, k]
-    A = t(data)
     
-    tmp = A - u
+    tmp = t(t(data) - u)
     
-    S = S + t(p * t(tmp)) %*% t(tmp)
+    S_temp = (p * t(tmp)) %*% tmp
+    
+    S = S + S_temp
   }
   
-  sigma_max = nums / nrow(data)
+  sigma_max = S / nrow(data)
   
   out_params$Sigma = sigma_max
   
@@ -187,6 +188,7 @@ myEM = function(data, G, init_params, itmax) {
     
     # add loglik to list of outputs and return 
     init_params[['loglik']] = loglik(data, G, init_params)
+    
     
     init_params = Mstep(data, G, init_params, post_prob)
   }
