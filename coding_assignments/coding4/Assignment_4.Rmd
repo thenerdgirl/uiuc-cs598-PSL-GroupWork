@@ -59,7 +59,7 @@ Estep = function(data, G, init_params) {
   # iterate through G
   for (k in 1:G) {
     
-    u = init_params$mean[k,]
+    u = init_params$mean[,k]
     p = init_params$prob[k]
     
     # this is all to calculate the exponent of pdf function, using approach 2
@@ -102,25 +102,24 @@ Mstep = function(data, G, init_params, post_prob) {
   denom = colSums(post_prob)
   
   # we want to perform elementwise division, but by rows instead of cols
-  new_mean = t(sweep(numerator, 2, denom, "/"))
+  new_mean = sweep(numerator, 2, denom, "/")
   out_params$mean = new_mean
   
   # solve for new sigma 
+  S = matrix(0, nrow=ncol(data), ncol=ncol(data))
   
-  S = matrix(0, nrow=ncol(data), ncol=G)
     # iterate through G
   for (k in 1:G) {
     u = out_params$mean[, k]
     p = post_prob[, k]
+    A = t(data)
     
-    tmp = data - u
+    tmp = A - u
     
-    #S = t(p * t(tmp)) %*% t(tmp) / sum(p)
-    
-    S = S + t(tmp) %*% diag(p) %*% tmp
+    S = S + t(p * t(tmp)) %*% t(tmp)
   }
   
-  sigma_max = solve(n / S)
+  sigma_max = nums / nrow(data)
   
   out_params$Sigma = sigma_max
   
@@ -138,7 +137,7 @@ loglik = function(data, G, init_params) {
   for (k in 1:G) {
     # rename vars to make equation align better
     x = data
-    u = init_params$mean[k,]
+    u = init_params$mean[, k]
     sigma = init_params$Sigma
     p = init_params$prob[k]
     d = ncol(x) # data dimensions 
@@ -185,15 +184,14 @@ loglik = function(data, G, init_params) {
 myEM = function(data, G, init_params, itmax) {
   for(i in 1:itmax) {
     post_prob = Estep(data, G, init_params)
+    
+    # add loglik to list of outputs and return 
+    init_params[['loglik']] = loglik(data, G, init_params)
+    
     init_params = Mstep(data, G, init_params, post_prob)
   }
   
-  out_params = init_params
-
-  # add loglik to list of outputs and return 
-  out_params[['loglik']] = loglik(data, G, init_params)
-
-  return(out_params)
+  return(init_params)
 }
 ```
 
@@ -225,7 +223,7 @@ sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + (t(x2) - u2) %*% t(t(x2) - u2) )
 itmax = 20
 
 # gather initial params into list
-init_params = list(prob=c(p1, p2), mean=rbind(u1, u2), Sigma=sigma)
+init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
 
 # evaluate 
 out = myEM(data=data, 
@@ -233,7 +231,7 @@ out = myEM(data=data,
            init_params=init_params, 
            itmax=itmax)
 
-
+print(out)
 
 
 ######  Case 2: G = 3 ###### 
@@ -258,9 +256,20 @@ sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) +
                (t(x2) - u2) %*% t(t(x2) - u2) +
                (t(x3) - u3) %*% t(t(x3) - u3))
 
-epsilon = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2) + t(x3 - u3) %*% (x3 - u3))
-
 max_iteration = 20
+
+# gather initial params into list
+init_params = list(prob=c(p1, p2, p3), mean=cbind(u1, u2, u3), Sigma=sigma)
+
+# evaluate 
+out = myEM(data=data, 
+           G=G, 
+           init_params=init_params, 
+           itmax=itmax)
+
+print(out)
+
+
 
 ```
 
