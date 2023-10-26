@@ -68,7 +68,7 @@ Estep = function(data, G, init_params) {
     summed = colSums(element_multiplied)
     exponent = -0.5 * summed
     
-    constant = 1 / ((2*pi) ^ (d/2) * sqrt(det(sigma)))
+    constant = 1 / sqrt((2*pi)^d * det(sigma))
     
     densities = constant * exp(exponent)
     
