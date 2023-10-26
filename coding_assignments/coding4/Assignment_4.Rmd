@@ -51,21 +51,35 @@ Estep = function(data, G, init_params) {
   # Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
   A = t(data) # transpose of the data matrix
   
-  # our n-by-G output matrix
-  out = matrix(0, nrow=nrow(data), ncol=G)
+  # get density for each component, at end we will row sum to get prob
+  density = matrix(0, nrow=nrow(data), ncol=G)
   
   # iterate through G
   for (k in 1:G) {
-    # these steps are outlined in the campuswire post linked above
-    demeaned = (A - init_params$mean[, k])
-    matrix_multiplied = solve(init_params$Sigma) %*% demeaned
+    
+    x = data
+    u = init_params$mean[, k]
+    sigma = init_params$Sigma
+    d = ncol(x) # data dimensions 
+    
+    # this is all to calculate the exponent of pdf function, using approach 2
+    A = t(x)
+    demeaned = (A - u)
+    matrix_multiplied = solve(sigma) %*% demeaned
     element_multiplied = matrix_multiplied * demeaned
     summed = colSums(element_multiplied)
+    exponent = -0.5 * summed
+    
+    constant = 1 / sqrt(2 * pi^d * det(sigma))
+    
+    densities = constant * exp(exponent)
     
     # now concat the columns
-    out[, k] = summed 
+    density[, k] = densities 
   }
   
+  # now sum across rows to get probability of each density 
+  phi = density / rowSums(density)
   return(out)
 }
 ```
