@@ -92,7 +92,6 @@ Mstep = function(data, G, init_params, post_prob) {
   
   n = nrow(data)
   
-  
   out_params = init_params
   # get new prob
   out_params$prob = colSums(post_prob) / n
@@ -132,31 +131,26 @@ Mstep = function(data, G, init_params, post_prob) {
 This function computes the log-likelihood of the data given the parameters.
 ```{r part1-3, eval = TRUE}
 loglik = function(data, G, init_params) {
+  A = t(data) # transpose of the data matrix
+  d = ncol(data) # data dimensions 
+  sigma = init_params$Sigma
   
   # iterate over G and sum
   g_sum = rep(0, nrow(data))
   for (k in 1:G) {
-    # rename vars to make equation align better
-    x = data
-    u = init_params$mean[, k]
-    sigma = init_params$Sigma
+    #u = init_params$mean[,k]
     p = init_params$prob[k]
-    d = ncol(x) # data dimensions 
     
-    # Once again use Approach 2 to calculate gaussian (https://campuswire.com/c/G06C55090/feed)
-    
-    # these steps are outlined in the campuswire post linked above
-    A = t(x)
-    demeaned = (A - init_params$mean[, k])
+    # this is all to calculate the exponent of pdf function, using approach 2
+    demeaned = (A - u)
     matrix_multiplied = solve(sigma) %*% demeaned
     element_multiplied = matrix_multiplied * demeaned
     summed = colSums(element_multiplied)
+    exponent = -0.5 * summed
     
-    # equation from assigment
-    numerator = exp(-(1/2) * summed)
-    denom = sqrt(2 * pi^d * det(sigma))
+    constant = 1 / sqrt((2*pi)^d * det(sigma))
     
-    likelihood = p * numerator / denom
+    likelihood = p * constant * exp(exponent)
   
     g_sum = g_sum + likelihood
   }
@@ -164,6 +158,7 @@ loglik = function(data, G, init_params) {
   # now return sum of all log liks
   logged = log(g_sum)
   
+  # sum over n
   out = sum(logged)
   return(out)
 }
