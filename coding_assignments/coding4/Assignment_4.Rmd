@@ -60,6 +60,7 @@ Estep = function(data, G, init_params) {
   for (k in 1:G) {
     
     u = init_params$mean[k,]
+    p = init_params$prob[k]
     
     # this is all to calculate the exponent of pdf function, using approach 2
     demeaned = (A - u)
@@ -73,7 +74,7 @@ Estep = function(data, G, init_params) {
     densities = constant * exp(exponent)
     
     # now concat the columns
-    density[, k] = densities 
+    density[, k] = densities * p
   }
   
   # now sum across rows to get probability of each density 
