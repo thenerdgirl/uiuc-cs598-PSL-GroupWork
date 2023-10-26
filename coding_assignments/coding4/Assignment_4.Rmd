@@ -50,6 +50,8 @@ This function should return an n-by-G matrix, where the (i, j)th entry represent
 Estep = function(data, G, init_params) {
   # Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
   A = t(data) # transpose of the data matrix
+  d = ncol(data) # data dimensions 
+  sigma = init_params$Sigma
   
   # get density for each component, at end we will row sum to get prob
   density = matrix(0, nrow=nrow(data), ncol=G)
@@ -57,20 +59,16 @@ Estep = function(data, G, init_params) {
   # iterate through G
   for (k in 1:G) {
     
-    x = data
-    u = init_params$mean[, k]
-    sigma = init_params$Sigma
-    d = ncol(x) # data dimensions 
+    u = init_params$mean[k,]
     
     # this is all to calculate the exponent of pdf function, using approach 2
-    A = t(x)
     demeaned = (A - u)
     matrix_multiplied = solve(sigma) %*% demeaned
     element_multiplied = matrix_multiplied * demeaned
     summed = colSums(element_multiplied)
     exponent = -0.5 * summed
     
-    constant = 1 / sqrt(2 * pi^d * det(sigma))
+    constant = 1 / ((2*pi) ^ (d/2) * sqrt(det(sigma)))
     
     densities = constant * exp(exponent)
     
@@ -80,7 +78,8 @@ Estep = function(data, G, init_params) {
   
   # now sum across rows to get probability of each density 
   phi = density / rowSums(density)
-  return(out)
+  
+  return(phi)
 }
 ```
 
@@ -90,33 +89,41 @@ This function should return the updated parameters for the Gaussian mixture mode
 ```{r part1-2, eval = TRUE}
 Mstep = function(data, G, init_params, post_prob) {
   
-  out_params = init_params
-  
-  # update means
-  numerator = t(data) %*% post_prob
-  denom = colSums(post_prob)
-  # we want to perform elementwise division, but by rows instead of cols
-  new_mean = sweep(numerator, 2, denom, "/")
-  out_params[['mean']] = new_mean
-  
-  
-  
-  S = matrix(0, nrow=ncol(data), ncol=G)
   n = nrow(data)
   
-  # iterate through G
+  
+  out_params = init_params
+  # get new prob
+  out_params$prob = colSums(post_prob) / n
+  
+  # get new means
+  numerator = t(data) %*% post_prob
+  denom = colSums(post_prob)
+  
+  # we want to perform elementwise division, but by rows instead of cols
+  new_mean = t(sweep(numerator, 2, denom, "/"))
+  out_params$mean = new_mean
+  
+  # solve for new sigma 
+  
+  S = matrix(0, nrow=ncol(data), ncol=G)
+    # iterate through G
   for (k in 1:G) {
-    u = init_params$mean[, k]
+    u = out_params$mean[, k]
     p = post_prob[, k]
     
     tmp = data - u
+    
+    #S = t(p * t(tmp)) %*% t(tmp) / sum(p)
     
     S = S + t(tmp) %*% diag(p) %*% tmp
   }
   
   sigma_max = solve(n / S)
   
-
+  out_params$Sigma = sigma_max
+  
+  return(out_params)
 }
 ```
 
@@ -130,7 +137,7 @@ loglik = function(data, G, init_params) {
   for (k in 1:G) {
     # rename vars to make equation align better
     x = data
-    u = init_params$mean[, k]
+    u = init_params$mean[k,]
     sigma = init_params$Sigma
     p = init_params$prob[k]
     d = ncol(x) # data dimensions 
@@ -212,12 +219,12 @@ u1 = colMeans(x1)
 u2 = colMeans(x2)
 
 # calculate sigma using provided eqn
-sigma = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2))
+sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + (t(x2) - u2) %*% t(t(x2) - u2) )
 
 itmax = 20
 
 # gather initial params into list
-init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+init_params = list(prob=c(p1, p2), mean=rbind(u1, u2), Sigma=sigma)
 
 # evaluate 
 out = myEM(data=data, 
@@ -245,7 +252,11 @@ u1 = colMeans(x1)
 u2 = colMeans(x2)
 u3 = colMeans(x3)
 
-# calculate epsilon using provided eqn
+# calculate sigma using provided eqn
+sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + 
+               (t(x2) - u2) %*% t(t(x2) - u2) +
+               (t(x3) - u3) %*% t(t(x3) - u3))
+
 epsilon = 1 / n * (t(x1 - u1) %*% (x1 - u1) + t(x2 - u2) %*% (x2 - u2) + t(x3 - u3) %*% (x3 - u3))
 
 max_iteration = 20
