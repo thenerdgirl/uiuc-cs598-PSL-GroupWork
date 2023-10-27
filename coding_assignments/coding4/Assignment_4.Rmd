@@ -19,9 +19,9 @@ Team contributions:
 
 | Person         | Contribution |
 |----------      |----------|
-| Naomi Bhagat   | Part 1, Part 2 |
-| Michael Miller |  |
-| Joe May        |  |
+| Naomi Bhagat   | Part 1 (some), Part 2 |
+| Michael Miller | Part 1 |
+| Joe May        | Part 1 (some)|
 
 Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/432)
 
