@@ -177,33 +177,54 @@ myEM = function(data, G, init_params, itmax) {
 
 
 ## Part1-5: Testing
-### Test Case 1: G = 2
-```{r part1-5-1, eval = TRUE}
+### Test Case 1: G = 6
+```{r part1-5-2, eval = TRUE}
+
 # load datset
 test_df = read.table('faithful.dat')
 n = nrow(test_df)
 data=as.matrix(test_df)
 
-###### Case 1: G = 2. Using variables from assignment ###### 
-G = 2
+######  Case 2: G = 3 ###### 
+G = 6
 p1 = 10/n
-p2 = 1 - p1
+p2 = 20/n
+p2 = 30/n
+p3 = 40/n
+p4 = 50/n
+p5 = 50/n
+p6 = 1 - sum(c(p1, p2, p3, p4, p5))
 
-# slice x into x1 and x2 to simplify code later
+# slice x into x1 x2, and x3 to simplify code later
 x1 = as.matrix(test_df[1:10, ])
-x2 = as.matrix(test_df[11:n,])
+x2 = as.matrix(test_df[11:30, ])
+x3 = as.matrix(test_df[31:60, ])
+x4 = as.matrix(test_df[61:100, ])
+x5 = as.matrix(test_df[101:150, ])
+x6 = as.matrix(test_df[151:n, ])
+
 
 # u1 is mean of first 10 samples, u2 is mean of remaining
 u1 = colMeans(x1)
 u2 = colMeans(x2)
+u3 = colMeans(x3)
+u4 = colMeans(x4)
+u5 = colMeans(x5)
+u6 = colMeans(x6)
+
 
 # calculate sigma using provided eqn
-sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + (t(x2) - u2) %*% t(t(x2) - u2) )
+sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + 
+               (t(x2) - u2) %*% t(t(x2) - u2) +
+               (t(x3) - u3) %*% t(t(x3) - u3) +
+               (t(x4) - u4) %*% t(t(x4) - u4) +
+               (t(x5) - u5) %*% t(t(x5) - u5) +
+               (t(x6) - u6) %*% t(t(x6) - u6))
 
-itmax = 20
+max_iteration = 20
 
 # gather initial params into list
-init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+init_params = list(prob=c(p1, p2, p3, p4, p5, p6), mean=cbind(u1, u2, u3, u4, u5, u6), Sigma=sigma)
 
 # evaluate 
 out = myEM(data=data, 
@@ -214,7 +235,7 @@ out = myEM(data=data,
 print(out)
 ```
 
-### Test Case 2: G = 3
+### Test Case 2: G = 6
 ```{r part1-5-2, eval = TRUE}
 
 ######  Case 2: G = 3 ###### 
