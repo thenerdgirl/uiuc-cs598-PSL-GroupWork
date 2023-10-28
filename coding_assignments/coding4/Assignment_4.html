@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2023-10-26" />
+<meta name="date" content="2023-10-28" />
 
 <title>Coding Assignment 4</title>
 
@@ -379,7 +379,7 @@ pre code {
 <h4 class="author">Naomi Bhagat - nbhagat3</h4>
 <h4 class="author">Michael Miller - msmille3</h4>
 <h4 class="author">Joe May - jemay3</h4>
-<h4 class="date">26 October 2023</h4>
+<h4 class="date">28 October 2023</h4>
 
 </div>
 
@@ -425,30 +425,20 @@ Team contributions:</p>
 <tbody>
 <tr class="odd">
 <td>Naomi Bhagat</td>
-<td>Part 1, Part 2</td>
+<td>Part 1 (some), Part 2</td>
 </tr>
 <tr class="even">
 <td>Michael Miller</td>
-<td></td>
+<td>Part 1</td>
 </tr>
 <tr class="odd">
 <td>Joe May</td>
-<td></td>
+<td>Part 1 (some)</td>
 </tr>
 </tbody>
 </table>
 <p>Assignment URL: <a href="https://campuswire.com/c/G06C55090/feed/432">campuswire
 post</a></p>
-<pre class="r"><code># add required packages
-packages = c()
-
-# if packages don&#39;t exist, install. Then call library on them
-for (package in packages) {
-  if (!requireNamespace(package, quietly=TRUE)) {
-    install.packages(package)
-  }
-  library(package, character.only=TRUE)
-}</code></pre>
 </div>
 <div id="part-1-gaussian-mixtures" class="section level1">
 <h1>Part 1: Gaussian Mixtures</h1>
@@ -470,7 +460,6 @@ ranges from 1 to n and k ranges from 1 to G.</p>
   
   # iterate through G
   for (k in 1:G) {
-    
     u = init_params$mean[,k]
     p = init_params$prob[k]
     
@@ -491,7 +480,6 @@ ranges from 1 to n and k ranges from 1 to G.</p>
   
   # now sum across rows to get probability of each density 
   phi = density / rowSums(density)
-  
   return(phi)
 }</code></pre>
 </div>
@@ -502,7 +490,6 @@ mixture model.</p>
 <pre class="r"><code>Mstep = function(data, G, init_params, post_prob) {
   
   n = nrow(data)
-  
   out_params = init_params
   # get new prob
   out_params$prob = colSums(post_prob) / n
@@ -532,7 +519,6 @@ mixture model.</p>
   
   sigma_max = S / nrow(data)
   out_params$Sigma = sigma_max
-  
   return(out_params)
 }</code></pre>
 </div>

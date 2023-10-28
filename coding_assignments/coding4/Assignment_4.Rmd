@@ -25,20 +25,6 @@ Team contributions:
 
 Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/432)
 
-```{r setup, eval = TRUE}
-# add required packages
-packages = c()
-
-# if packages don't exist, install. Then call library on them
-for (package in packages) {
-  if (!requireNamespace(package, quietly=TRUE)) {
-    install.packages(package)
-  }
-  library(package, character.only=TRUE)
-}
-```
-
-
 # Part 1: Gaussian Mixtures
 
 Implement the EM algorithm from scratch for a p-dimensional Gaussian mixture model with G components:
@@ -58,7 +44,6 @@ Estep = function(data, G, init_params) {
   
   # iterate through G
   for (k in 1:G) {
-    
     u = init_params$mean[,k]
     p = init_params$prob[k]
     
@@ -79,7 +64,6 @@ Estep = function(data, G, init_params) {
   
   # now sum across rows to get probability of each density 
   phi = density / rowSums(density)
-  
   return(phi)
 }
 ```
@@ -91,7 +75,6 @@ This function should return the updated parameters for the Gaussian mixture mode
 Mstep = function(data, G, init_params, post_prob) {
   
   n = nrow(data)
-  
   out_params = init_params
   # get new prob
   out_params$prob = colSums(post_prob) / n
@@ -121,7 +104,6 @@ Mstep = function(data, G, init_params, post_prob) {
   
   sigma_max = S / nrow(data)
   out_params$Sigma = sigma_max
-  
   return(out_params)
 }
 ```
