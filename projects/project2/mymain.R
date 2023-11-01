@@ -87,7 +87,7 @@ dept_svd = function(X){
 
 # reshapes transposed and pivoted matrix back to original form with rows for date, store, and dept
 get_reshape = function(Xmn,column_names,i){
-  if(DEBUG) { cat("get_reshape 1 n",nrow(Xmn),"m",ncol(Xmn),"\n") } 
+  #if(DEBUG) { cat("get_reshape 1 n",nrow(Xmn),"m",ncol(Xmn),"\n") } 
   
   smoothed = as.data.frame(t(Xmn))
   #if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
@@ -141,6 +141,26 @@ evaluation = function(){
   return(wae)
 }
 
+post_process = function(prediction, threshold=1.1) { 
+  # given our prediction matrix, perform post processing. 
+  
+  # approach is per campuswire, with default value for threshold taken from 
+  # @davidthaler https://github.com/davidthaler/Walmart_competition_code/blob/master/postprocess.R
+  
+  #@todo figure out if we need to account for a 2.5 vs 2 day shift 
+  
+  # get baseline sales
+  
+  # get surge sales
+  
+  # compare surge to baseline. If surged, shift excess sales 
+  
+  
+  
+  return (prediction)
+  }
+
+
 
 ############## Prediction Script Body ############## 
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
@@ -175,7 +195,7 @@ for (fold_num in 1:fold_count) {
     dept_preds = get_reshape(X_smoothed,cn,dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
-    if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
+    #if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
   }
   
 # Performs offsets done in implementation #1, which seem to realign prediction weeks/dates
@@ -198,6 +218,9 @@ for (fold_num in 1:fold_count) {
   id = is.na(test_pred$Weekly_Pred)
   test_pred$Weekly_Pred[id] = 0
   
+# Postprocess predictions
+  test_pred = post_process(test_pred)
+  
 # Recreates prior data frames for training and predictions to print for debugging.
   
   tmp_train1 = predictions %>%
@@ -209,8 +232,8 @@ for (fold_num in 1:fold_count) {
   test_pred1 = test_wk %>%
     left_join(tmp_train, by = c('Dept', 'Store', 'Wk')) 
   
-  print(tmp_train1)
-  print(test_pred1)
+  #print(tmp_train1)
+  #print(test_pred1)
   
   if(DEBUG) { cat("fold",fold_num,"test_wk",nrow(test_wk),"m",ncol(test_wk),"\n") }
   if(DEBUG) { cat("fold",fold_num,"test_pred",nrow(test_pred),"m",ncol(test_pred),"\n") }
