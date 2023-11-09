@@ -22,6 +22,8 @@ for (package in packages) {
 
 DEBUG = TRUE
 
+fold_count = 1
+
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
@@ -71,10 +73,10 @@ dept_svd = function(X){
   U = svd_decom$u[,1:d]
   D = diag(svd_decom$d[1:d])
   Vt = t(svd_decom$v[,1:d])
-  if(DEBUG) { 
-    cat("dept_svd 2 U",nrow(svd_decom$u),"x",ncol(svd_decom$u),
-        "D",length(svd_decom$d),"x",length(svd_decom$d),
-        "Vt",nrow(svd_decom$v),"x",ncol(svd_decom$v),"\n") } 
+  #if(DEBUG) { 
+  #  cat("dept_svd 2 U",nrow(svd_decom$u),"x",ncol(svd_decom$u),
+  #      "D",length(svd_decom$d),"x",length(svd_decom$d),
+  #      "Vt",nrow(svd_decom$v),"x",ncol(svd_decom$v),"\n") } 
   X_s = U %*% D %*% Vt + store_mean
   } else {
   X_s =  X_less_mean + store_mean
@@ -116,7 +118,6 @@ get_reshape = function(Xmn,column_names,i){
 evaluation = function(){
   test_w_label_path = paste0('Proj2_Data/test_with_label.csv')
   test_w_label = read.csv(test_w_label_path)
-  fold_count = 10
   wae = rep(0, fold_count)
   
   for (fold_num in 1:fold_count) {
@@ -170,7 +171,9 @@ if(DEBUG) {
   cat('\t-----wae-----\t---Time (S)---\n')
 } 
 
-fold_count = 10
+#fold_count = 10
+fold_count = 1
+
 for (fold_num in 1:fold_count) {
   
 # Initialize prediction frame, fold name, and gets training and testing data.
@@ -280,7 +283,6 @@ if(DEBUG) {
 # Loop through prediction files to write to .csv for debugging.
 
 testpredictions = data.frame()
-fold_count = 10
 for (fold_num in 1:fold_count) {
   file_dir = paste0('fold_', as.character(fold_num))
   test_pred = read.csv(paste0('Proj2_Data/', file_dir, '/mypred.csv'))
