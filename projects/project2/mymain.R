@@ -29,12 +29,6 @@ set.seed(235)
 
 #######  Functions Called in Main  ####### 
 
-# provides a unique list of departments to loop through
-get_depts = function(train_data){
-  depts = unique(train_data$Dept)
-  return(depts)
-}
-
 # Given raw input data and department d, gives us the 
 # cleaned matrix X as defined https://campuswire.com/c/G06C55090/feed
 get_dept_matrix = function(train_data, d){
@@ -179,75 +173,61 @@ for (fold_num in 1:fold_count) {
   # Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
   
-  predictions = data.frame()
-  
   train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
   
-  # we only need to train model for depts in both test and train
-  train_depts = get_depts(train)
-  test_depts = get_depts(test)
-  depts_to_use = intersect(train_depts, test_depts)
+  # preallocate output matrix
+  out = test
   
-  # Loops through departments, implements SVD for each, reshapes to original form,
-  # and adds SVD results as predictions
-  for(dept in depts_to_use){
-    if(DEBUG) { cat("department", dept,"\n") } 
+  # mutate datasets to create our variables Wk and Yr
+  train = train %>%
+    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    mutate(Yr = year(Date))
+  
+  test = test %>% 
+    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    mutate(Yr = year(Date)) 
+  
+  for(dept in unique(test$Dept)){
     
-    # matrix of stores x weeks
-    X = get_dept_matrix(train, dept)
+    # filter for just the dept we want
+    train_dept = train %>% filter(Dept == dept)
+    test_dept = test %>% filter(Dept == dept)
     
-    # perform PCA to reduce noise in X
-    cn=colnames(Xi[-1])
-    X_smoothed = dept_svd(Xi)
+    train_stores = unique(train_dept$Store)
+    test_stores = unique(test_dept$Store)
+    stores_to_use = intersect(train_stores, test_stores)
     
-    
-    # 
-    dept_preds = get_reshape(X, cn, dept)
-    full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
-    predictions = rbind(predictions, full_dept)
-    #if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
+    for(store in stores_to_use){
+      # filter for just the store we want
+      train_dept_store = train_dept %>% filter(Store == store)
+      test_dept_store = train_dept %>% filter(Store == store)
+      
+      
+      # get design matrix
+      train_design = model.matrix(~ Yr + Wk, train_dept_store)
+      test_design = model.matrix(~ Yr + Wk, test_dept_store)
+      
+      # train model
+      model_coef = lm(train_dept_store$Weekly_Sales ~ train_design)$coef
+      
+      # handle 0s for when we don't have correct data
+      model_coef[is.na(model_coef)] <- 0
+      
+      # evaluate model and put outputs back on our df
+      pred_dept_store =  model_coef[1] + test_design %*% model_coef[-1]
+      test_dept_store$Weekly_Sales = pred_dept_store
+      
+      tmp_out = test_dept_store[c('Dept', 'Store', 'Date', 'Weekly_Sales')]
+      
+      out = out %>%
+        left_join(tmp_out, by=c('Dept', 'Store', 'Date')) 
+    }
   }
   
-# Performs offsets done in implementation #1, which seem to realign prediction weeks/dates
-  start_last_year = as.Date(min(test$Date)) - 375
-  end_last_year = as.Date(max(test$Date)) - 350
+  # if we didn't make a prediction due to lack of input data, set to 0
+  out$Weekly_Sales[is.na(out$Weekly_Sales)] = 0
   
-  tmp_train = predictions %>%
-    filter(Date > start_last_year & Date < end_last_year) %>%
-    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
-    rename(Weekly_Pred = Prediction) %>%
-    select(-Date, -IsHoliday, -Weekly_Sales)
-  
-  test_wk = test %>%
-    mutate(Wk = week(Date))
-  
-  test_pred = test_wk %>%
-    left_join(tmp_train, by = c('Dept', 'Store', 'Wk')) %>%
-    select(-Wk)
-  
-  id = is.na(test_pred$Weekly_Pred)
-  test_pred$Weekly_Pred[id] = 0
-  
-# Postprocess predictions
-  test_pred = post_process(test_pred)
-  
-# Recreates prior data frames for training and predictions to print for debugging.
-  
-  tmp_train1 = predictions %>%
-    filter(Date > start_last_year & Date < end_last_year) %>%
-    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
-    rename(Weekly_Pred = Prediction) %>%
-    select(-IsHoliday)
-  
-  test_pred1 = test_wk %>%
-    left_join(tmp_train, by = c('Dept', 'Store', 'Wk')) 
-  
-  #print(tmp_train1)
-  #print(test_pred1)
-  
-  if(DEBUG) { cat("fold",fold_num,"test_wk",nrow(test_wk),"m",ncol(test_wk),"\n") }
-  if(DEBUG) { cat("fold",fold_num,"test_pred",nrow(test_pred),"m",ncol(test_pred),"\n") }
   
   pred_path = paste0('Proj2_Data/', file_dir, '/mypred.csv')
   readr::write_csv(test_pred, pred_path)
