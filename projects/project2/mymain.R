@@ -95,16 +95,10 @@ dept_svd = function(X){
   return(X_s)
 }
 
-# reshapes transposed and pivoted matrix back to original form with rows for date, store, and dept
-get_reshape = function(Xmn,column_names,i){
-  #if(DEBUG) { cat("get_reshape 1 n",nrow(Xmn),"m",ncol(Xmn),"\n") } 
+# given our matrix X, generate a design matrix that we will feed into lm
+get_design_matrix = function(X, column_names, i){
   
   smoothed = as.data.frame(t(Xmn))
-  #if(DEBUG) { cat("get_reshape 2 n",nrow(smoothed),"m",length(smoothed),"\n") } 
-  #if(DEBUG) { 
-  #  cat("get_reshape 3 n ")
-  #  print(column_names)
-  #} 
   
   colnames(smoothed) = column_names
   #if(DEBUG) { cat("get_reshape 4 n",nrow(Xi),"m",length(Xi),"\n") } 
@@ -184,15 +178,20 @@ for (fold_num in 1:fold_count) {
   
   # Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
+  
   predictions = data.frame()
   
   train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
-  depts = get_depts(train)
-
+  
+  # we only need to train model for depts in both test and train
+  train_depts = get_depts(train)
+  test_depts = get_depts(test)
+  depts_to_use = intersect(train_depts, test_depts)
+  
   # Loops through departments, implements SVD for each, reshapes to original form,
   # and adds SVD results as predictions
-  for(dept in depts){
+  for(dept in depts_to_use){
     if(DEBUG) { cat("department", dept,"\n") } 
     
     # matrix of stores x weeks
@@ -204,7 +203,7 @@ for (fold_num in 1:fold_count) {
     
     
     # 
-    dept_preds = get_reshape(X,cn,dept)
+    dept_preds = get_reshape(X, cn, dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
     #if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
