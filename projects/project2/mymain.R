@@ -10,7 +10,8 @@
 
 #######  load libraries  ####### 
 # packages to load
-packages = c('tidyverse','lubridate')
+# note magrittr not expressly called but we use the %<% operator
+packages = c('tidyr', 'tidyverse','lubridate', 'magrittr', 'dplR')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
@@ -34,15 +35,23 @@ get_depts = function(train_data){
   return(depts)
 }
 
-# filters data to given department and pivots into matrix with date/week and store number as rows/columns
-department_matrix = function(train_data, d){
-  matrix = train_data %>%
+# Given raw input data and department d, gives us the 
+# cleaned matrix X as defined https://campuswire.com/c/G06C55090/feed
+get_dept_matrix = function(train_data, d){
+  X = train_data %>%
     filter(Dept == d) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
   
-  #if(DEBUG) { cat("department matrix: n",nrow(matrix),"m",ncol(matrix)) } 
-  return(matrix)
+  # replace NAs with 0 
+  X[is.na(X)] = 0 
+  
+  # drop date row, and take transpose
+  X = X[, -1]
+  X = t(X)
+  
+  # this is now X as described here: https://campuswire.com/c/G06C55090/feed/737
+  return(X)
 }
 
 # Replaces na values with 0. Get average sales for store. Create SVD.
@@ -50,10 +59,9 @@ dept_svd = function(X){
   m = ncol(X)-1
   n = nrow(X)
   d = min(m, n, 8)
-  #if(DEBUG) { cat("dept_svd 1 n",n,"m",m,"d",d,"\n") } 
   
+  # replace na's with 0s
   X[is.na(X)] = 0
-  #if(DEBUG) { cat("dept_svd 2 n",nrow(X),"m",ncol(X)-1,"d\n") } 
   
   store_mean = rowMeans(t(X[,-1]))
   X_less_mean = t(X[,-1]) - store_mean
@@ -171,31 +179,32 @@ if(DEBUG) {
   cat('\t-----wae-----\t---Time (S)---\n')
 } 
 
-#fold_count = 10
-fold_count = 1
-
 for (fold_num in 1:fold_count) {
+  if(DEBUG) { cat("reached fold ",fold_num) } 
   
-# Initialize prediction frame, fold name, and gets training and testing data.
+  # Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
   predictions = data.frame()
-  if(DEBUG) { cat("reached fold ",fold_num) } 
+  
   train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
   depts = get_depts(train)
-  
-  if(DEBUG) { cat("loaded data. Departments are",depts,"\n") } 
 
-# Loops through departments, implements SVD for each, reshapes to original form,
-# and adds SVD results as predictions
-  
-  for(i in depts){
-    if(DEBUG) { cat("department",i,"\n") } 
-    dept=i
-    Xi = department_matrix(train,dept)
+  # Loops through departments, implements SVD for each, reshapes to original form,
+  # and adds SVD results as predictions
+  for(dept in depts){
+    if(DEBUG) { cat("department", dept,"\n") } 
+    
+    # matrix of stores x weeks
+    X = get_dept_matrix(train, dept)
+    
+    # perform PCA to reduce noise in X
     cn=colnames(Xi[-1])
     X_smoothed = dept_svd(Xi)
-    dept_preds = get_reshape(X_smoothed,cn,dept)
+    
+    
+    # 
+    dept_preds = get_reshape(X,cn,dept)
     full_dept = merge(train, dept_preds, by = c("Store", "Date", "Dept"))
     predictions = rbind(predictions, full_dept)
     #if(DEBUG) { cat("loop end n",nrow(predictions),"m",ncol(predictions),"\n") }
