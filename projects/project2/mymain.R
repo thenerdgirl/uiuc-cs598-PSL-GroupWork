@@ -24,7 +24,7 @@ for (package in packages) {
 DEBUG = TRUE
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
-num_folds = 10
+num_folds = 3
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
@@ -236,24 +236,18 @@ if (!DEBUG) {
   # evaluate results 
   wae = myeval()
   
-  
-  
   # output metrics for report
   #header
-  cat('\tWAE\tTIME (S)\n')
+  cat('Fold\tWAE\tTIME (S)\n')
   
   for (fold_num in 1:num_folds) {
     # rows
-    cat(sprintf('%.3f\t%.4f\t%.4f\t%.3f\t%.3f\t\n',
+    cat(sprintf('%d\t%.3f\t%.2f\n',
                 fold_num, 
-                rmse_linear, 
-                rmse_tree, 
-                time_linear, 
-                time_tree ))
+                run_times[fold_num], 
+                wae[fold_num]))
   }
-  }
-  
-  
+  cat('\n\n')
   
   avg_wae=mean(wae)
   cat('Average wae', avg_wae,'\n')
