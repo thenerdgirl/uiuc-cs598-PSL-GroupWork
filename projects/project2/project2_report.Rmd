@@ -24,8 +24,8 @@ Team contributions:
 | Person         | Contribution                                |
 |----------------|---------------------------------------------|
 | Naomi Bhagat   | Report |
-| Michael Miller |  |
-| Joe May        |  |
+| Michael Miller | Algorithm |
+| Joe May        | Algotrithm, Report |
 
 ## Overview
 
@@ -37,7 +37,13 @@ The measure we use for evaluation is the weighted mean absolute error (WMAE) bet
 
 Our function `process_fold` is the meat of the prediction algortihm. We first read the training and test data in the given file directory parameter `file_dir`. 
 
-We first clean the test data by 
+We first clean the test data by introducing a new vairable `Wk` to numerically represent each week of the year, ranging from 1-52. We do the same thing with a new variable `Yr` to represent the year of the already existing `Date` in thetest dataset.
+
+We then initialize an output matrix, a counter variable, and the a variable to keep track of the number of departments in the data. In order to speed up our processing speed, a variable called `dept_to_eval` is created to keep track of departments that exist in both the test data and the training data.
+
+From here, we perform the same steps for each department stored in the `dept_to_eval` variable. Our first call is to a custom function called `spread_df`, which takes the parameters of the training data and the current department being evaluated. In the `spread_df` function, we start with a variable `X` which takes the training data and filters out any departments that are not the current department, as well as keeps the relevant data from the training data, including `Store`, `Date`, and `Weekly_Sales`. Finally, we use the `spread` function from the `tidyr` package to expand the training data to include top-level columns for `Store` and `Weekly_Sales`. After replacing all the `NA` values with 0 in `X`, we drop the `Date` row and take the transpose of `X`, and return a list consisting of X, stores, and dates.
+
+
 
 ## Section 2: Performance Metrics
 
