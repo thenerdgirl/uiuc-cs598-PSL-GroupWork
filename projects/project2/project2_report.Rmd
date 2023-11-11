@@ -23,21 +23,40 @@ Team contributions:
 
 | Person         | Contribution                                |
 |----------------|---------------------------------------------|
-| Naomi Bhagat   |  |
+| Naomi Bhagat   | Report |
 | Michael Miller |  |
 | Joe May        |  |
 
+## Overview
+
+Given historical sales data from 45 Walmart stores spread across different regions, our task was to predict the future weekly sales for every department in each store. The dataset is from https://www.kaggle.com/c/walmart-recruiting-store-sales-forecasting.
+
+The measure we use for evaluation is the weighted mean absolute error (WMAE) between our predictions and the actual values of the weekly sales.
+
 ## Section 1: Technical Details
 
+Our function `process_fold` is the meat of the prediction algortihm. We first read the training and test data in the given file directory parameter `file_dir`. 
 
-### Pre-Processing
-
-
+We first clean the test data by 
 
 ## Section 2: Performance Metrics
 
-The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 10 training/test splits. 
+The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 10 training/test splits. Below is a summary of the fold #, the WMAE for each fold, and the time it took to train the models:
 
+| Fold | WMAE | Time (s) |
+|------|------|----------|
+| 1 | 1941.586 | 69.40 |
+| 2 | 1363.507 | 67.85 |
+| 3 | 1382.469 | 69.29 |
+| 4 | 1527.293 | 80.14 |
+| 5 | 2156.606 | 80.31 |
+| 6 | 1634.892 | 78.32 |
+| 7 | 1613.908 | 70.70 |
+| 8 | 1355.016 | 68.13 |
+| 9 | 1336.911 | 71.56 |
+| 10 | 1334.010 | 73.67 |
+
+The average WMAE over all folds is 1564.62.
 
 
 
