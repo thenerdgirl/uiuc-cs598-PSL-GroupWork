@@ -23,53 +23,51 @@ for (package in packages) {
 
 DEBUG = TRUE
 
-fold_count = 10
+num_folds = 1
 
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
 
-# Given raw input data and department d, gives us the 
-# cleaned matrix X as defined https://campuswire.com/c/G06C55090/feed
-get_dept_matrix = function(train_data, d){
-  X = train_data %>%
-    filter(Dept == d) %>%
+# Given raw input data and department dept, gives us the 
+# cleaned matrix X as defined https://campuswire.com/c/G06C55090/feed/364
+# rows are stores, columns are weeks 
+get_dept_matrix = function(train, dept){
+  X = train %>%
+    filter(Dept == dept) %>%
     select(Store, Date, Weekly_Sales) %>%
     spread(Store, Weekly_Sales)
   
   # replace NAs with 0 
-  X[is.na(X)] = 0 
+  #X[is.na(X)] = 0 
   
   # drop date row, and take transpose
-  X = X[, -1]
-  X = t(X)
+  #X = X[, -1]
+  #X = t(X)
   
-  # this is now X as described here: https://campuswire.com/c/G06C55090/feed/737
   return(X)
 }
 
 # Replaces na values with 0. Get average sales for store. Create SVD.
-dept_svd = function(X){
+get_svd = function(X){
   m = ncol(X)-1
   n = nrow(X)
   d = min(m, n, 8)
   
-  # replace na's with 0s
-  X[is.na(X)] = 0
+  # remove store means
+  store_means = rowMeans(X)
+  demeaned = X - store_means
   
-  store_mean = rowMeans(t(X[,-1]))
-  X_less_mean = t(X[,-1]) - store_mean
-  #if(DEBUG) { cat("dept_svd t(X[,-1]",nrow(t(X[,-1])),"m",length(t(X[,-1])),"s",length(store_mean),"\n") } 
-  #if(DEBUG) { cat("dept_svd X_less n",nrow(X_less_mean),"m",length(X_less_mean),"\n") } 
-  #if(DEBUG) { cat("dept_svd data   n",nrow(data_t),"m",ncol(data_t),"\n") } 
-  #if(DEBUG) { cat("dept_svd data_t n",nrow(data_t),"m",length(data_t),"\n") } 
-  #if(DEBUG) { cat("dept_svd c n",class(X),"\n") } 
-  #if(DEBUG) { cat("dept_svd d n",class(X_less_mean),"\n") } 
+  # implement SVD 
+  svd_results = svd(demeaned)
   
-  # implements SVD unless there is either one row or column
-  # selects top 8 dimensions or row/column width if either is less than 8
-  # If rows or columns have one entry, it just returns the matrix
-  # I'm really not confident this is all done right, but it was done to ensure it works.
+  u * s * vt
+  
+  
+  
+  
+  
+  
   if(min(n,m)>1){
   svd_decom = svd(X_less_mean)
   U = svd_decom$u[,1:d]
@@ -111,30 +109,29 @@ get_design_matrix = function(X, column_names, i){
 }
 
 ############## Evaluation Function ############## 
-evaluation = function(){
-  test_w_label_path = paste0('Proj2_Data/test_with_label.csv')
-  test_w_label = read.csv(test_w_label_path)
-  wae = rep(0, fold_count)
+myeval = function(){
+  file_path = paste0('Proj2_Data/test_with_label.csv')
+  test_with_label = read.csv(file_path)
+  wae = rep(0, num_folds)
   
-  for (fold_num in 1:fold_count) {
-
-    file_dir =  paste0('fold_', as.character(fold_num))
-    test = read.csv(paste0('Proj2_Data/', file_dir, '/test.csv'))
+  for (i in 1:num_folds) {
+    file_path = paste0('Proj2_Data/fold_', i, '/test.csv')
+    test = read.csv(file_path)
     test =  test %>%
       select(-IsHoliday) %>%
-      left_join(test_w_label, by = c('Date', 'Store', 'Dept'))
+      left_join(test_with_label, by = c('Date', 'Store', 'Dept'))
     
-    test_pred = read.csv(paste0('Proj2_Data/', file_dir, '/mypred.csv'))
+    file_path = paste0('Proj2_Data/fold_', i, '/mypred.csv')
+    test_pred = read.csv(file_path)
     
-    new_test = test %>%
+    new_test <- test %>%
       left_join(test_pred, by = c('Date', 'Store', 'Dept'))
     
     actuals = new_test$Weekly_Sales
-    predictions = new_test$Weekly_Pred
+    preds = new_test$Weekly_Pred
     weights = if_else(new_test$IsHoliday.x, 5, 1)
-    wae[fold_num] = sum(weights * abs(actuals - predictions)) / sum(weights)
+    wae[i] = sum(weights * abs(actuals - preds)) / sum(weights)
   }
-  if(DEBUG) { cat('fold',fold_num,wae,'\n') } 
   return(wae)
 }
 
@@ -167,7 +164,7 @@ if(DEBUG) {
   cat('\t-----wae-----\t---Time (S)---\n')
 } 
 
-for (fold_num in 1:fold_count) {
+for (fold_num in 1:num_folds) {
   if(DEBUG) { cat("Fold",fold_num, "\n") } 
   
   # Initialize prediction frame, fold name, and gets training and testing data.
@@ -180,37 +177,46 @@ for (fold_num in 1:fold_count) {
   out = test_raw
   out$Weekly_Pred = 0
   
-  # mutate datasets to create our variables Wk and Yr
-  train = train_raw %>%
-    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
-    mutate(Wk = factor(Wk, levels=1:52)) %>%
-    mutate(Yr = year(Date))
-    
+  # we use efficient cleaning as defined https://liangfgithub.github.io/Proj/F23_R_Proj2_hints.html#Efficient_Implementation_for_III
   
-  test = test_raw %>% 
-    mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
-    mutate(Wk = factor(Wk, levels=1:52)) %>%
-    mutate(Yr = year(Date)) 
+  # find the unique pairs of (Store, Dept) combo that appeared in both training and test sets
+  train_pairs = train_raw[, 1:2] %>% count(Store, Dept) %>% filter(n != 0)
+  test_pairs = test_raw[, 1:2] %>% count(Store, Dept) %>% filter(n != 0)
+  both_pairs = intersect(train_pairs[, 1:2], test_pairs[, 1:2])
+  
+  # pick out the needed training samples, convert to dummy coding, then put them into a list
+  train = both_pairs %>% 
+    left_join(train, by = c('Store', 'Dept')) %>% 
+    mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
+    mutate(Yr = year(Date))
+  
+  test = both_pairs %>% 
+    left_join(test, by = c('Store', 'Dept')) %>% 
+    mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
+    mutate(Yr = year(Date))
   
   #counter for printing
   current_dept = 1
   full_depts = length(unique(test$Dept))
+  
+  # iterate through departments 
   for(dept in unique(test$Dept)){
     cat("Department", current_dept, "of", full_depts, "\n")
     current_dept = current_dept + 1
     
-    # filter for just the dept we want
-    train_dept = train %>% filter(Dept == dept)
+    # X is 
+    #X = get_dept_matrix(train, dept)
+    
+    #X_tilde = get_svd(X)
+    
+    # now iterate through the stores we have
     test_dept = test %>% filter(Dept == dept)
-    
-    train_stores = unique(train_dept$Store)
-    test_stores = unique(test_dept$Store)
-    stores_to_use = intersect(train_stores, test_stores)
-    
-    for(store in stores_to_use){
+    stores = unique(test_dept$Store)
+    for(store in stores){
+      
       # filter for just the store we want
-      train_dept_store = train_dept %>% filter(Store == store)
-      test_dept_store = test_dept %>% filter(Store == store)
+      train_dept_store = train %>% filter(Store == store & Dept == dept)
+      test_dept_store = test %>% filter(Store == store & Dept == dept)
       
       # get design matrix
       train_design = model.matrix(~ Yr + Wk, train_dept_store)
@@ -242,9 +248,9 @@ for (fold_num in 1:fold_count) {
 }
 
 ############## Evaluate Forecast and Estimate Grade ############## 
-wae = evaluation()
+wae = myeval()
 if(DEBUG) {
-  # calulate and print average wae
+  cat(wae, '\n')
   avg_wae=mean(wae)
   cat('Average wae', avg_wae,'\n')
 
@@ -275,16 +281,3 @@ if(DEBUG) {
     cat('A+ 100% Perfection')
   }
 } 
-
-# Loop through prediction files to write to .csv for debugging.
-
-testpredictions = data.frame()
-for (fold_num in 1:fold_count) {
-  file_dir = paste0('fold_', as.character(fold_num))
-  test_pred = read.csv(paste0('Proj2_Data/', file_dir, '/mypred.csv'))
-  testpredictions = rbind(testpredictions, test_pred)
-  #print(test_pred)
-}    
-#readr::write_csv(  testpredictions, 'Proj2_Data/testpred.csv')
-
-
