@@ -23,7 +23,7 @@ for (package in packages) {
 
 DEBUG = TRUE
 
-fold_count = 1
+fold_count = 10
 
 set.seed(235)
 
@@ -168,27 +168,36 @@ if(DEBUG) {
 } 
 
 for (fold_num in 1:fold_count) {
-  if(DEBUG) { cat("reached fold ",fold_num) } 
+  if(DEBUG) { cat("Fold",fold_num, "\n") } 
   
   # Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
   
-  train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
-  test = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
+  train_raw = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
+  test_raw = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
   
   # preallocate output matrix
-  out = test
+  out = test_raw
+  out$Weekly_Pred = 0
   
   # mutate datasets to create our variables Wk and Yr
-  train = train %>%
+  train = train_raw %>%
     mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    mutate(Wk = factor(Wk, levels=1:52)) %>%
     mutate(Yr = year(Date))
+    
   
-  test = test %>% 
+  test = test_raw %>% 
     mutate(Wk = ifelse(year(Date) == 2010, week(Date)-1, week(Date))) %>%
+    mutate(Wk = factor(Wk, levels=1:52)) %>%
     mutate(Yr = year(Date)) 
   
+  #counter for printing
+  current_dept = 1
+  full_depts = length(unique(test$Dept))
   for(dept in unique(test$Dept)){
+    cat("Department", current_dept, "of", full_depts, "\n")
+    current_dept = current_dept + 1
     
     # filter for just the dept we want
     train_dept = train %>% filter(Dept == dept)
@@ -201,8 +210,7 @@ for (fold_num in 1:fold_count) {
     for(store in stores_to_use){
       # filter for just the store we want
       train_dept_store = train_dept %>% filter(Store == store)
-      test_dept_store = train_dept %>% filter(Store == store)
-      
+      test_dept_store = test_dept %>% filter(Store == store)
       
       # get design matrix
       train_design = model.matrix(~ Yr + Wk, train_dept_store)
@@ -212,25 +220,25 @@ for (fold_num in 1:fold_count) {
       model_coef = lm(train_dept_store$Weekly_Sales ~ train_design)$coef
       
       # handle 0s for when we don't have correct data
-      model_coef[is.na(model_coef)] <- 0
+      model_coef[is.na(model_coef)] = 0
       
       # evaluate model and put outputs back on our df
-      pred_dept_store =  model_coef[1] + test_design %*% model_coef[-1]
-      test_dept_store$Weekly_Sales = pred_dept_store
+      pred = model_coef[1] + test_design %*% model_coef[-1]
       
-      tmp_out = test_dept_store[c('Dept', 'Store', 'Date', 'Weekly_Sales')]
+      test_dept_store$Weekly_Pred = as.numeric(pred[, 1])
       
-      out = out %>%
-        left_join(tmp_out, by=c('Dept', 'Store', 'Date')) 
+      # now we join our results back into out
+      tmp_out = test_dept_store[c('Dept', 'Store', 'Date', 'Weekly_Pred')]
+      
+      out = out %>% 
+        left_join(tmp_out, by=c('Dept', 'Store', 'Date')) %>%
+        mutate(Weekly_Pred = coalesce(Weekly_Pred.y, Weekly_Pred.x)) %>% 
+        select(-Weekly_Pred.x, -Weekly_Pred.y)
     }
   }
   
-  # if we didn't make a prediction due to lack of input data, set to 0
-  out$Weekly_Sales[is.na(out$Weekly_Sales)] = 0
-  
-  
   pred_path = paste0('Proj2_Data/', file_dir, '/mypred.csv')
-  readr::write_csv(test_pred, pred_path)
+  readr::write_csv(out, pred_path)
 }
 
 ############## Evaluate Forecast and Estimate Grade ############## 
