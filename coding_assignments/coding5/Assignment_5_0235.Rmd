@@ -1,0 +1,100 @@
+---
+title: "Coding Assignment 5"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Part 1 |
+| Michael Miller | Part 2 & 3|
+| Joe May        | Part 3/Quality Assurance  |
+
+Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/602)
+
+
+
+
+
+```{r setup, eval = TRUE}
+# add required packages
+packages = c()
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(235)
+
+
+
+
+```
+
+
+# Part 1: Linear SVM 
+## Part 1-1: Implement the Pegasos Algorithm  
+Use a fixed number of epochs, e.g., T = 20.  
+In each epoch, before going through the dataset, consider randomizing the order of the data points. To achieve this, you should set random seeds for shuffling. For this assignment, the seeds used for shuffling do not need to be associated with your UIN.
+
+```{r part1-1, eval = TRUE}
+
+pegasos = function(test, train, epochs=20) {
+  
+  n = nrow(train)
+  
+  # initialize params
+  B = rep(0, p)
+  a = 0
+  t = 0
+  
+  for(epoch in 1:epochs) {
+    for (i in 1:n) {
+      
+      
+    }
+    
+  }
+  
+  
+  
+}
+
+
+
+```
+
+
+## Part 1-2: Evaluation 
+Test your code with the provided training (200 samples) and test (600 samples) datasets, which are subsets of the MNIST data. Each dataset consists of 257 columns, with the first 256 columns representing the features, and the last column indicating the label (either 5 or 6).  
+Report confusion tables on the training and test datasets.  
+Your code should obtain less than 15% test error.  
+
+```{r part1-2, eval = TRUE}
+  # read in data
+  train = read.csv('coding5_train.csv')
+  test = read.csv('coding5_test.csv')
+
+
+
+
+```
+
