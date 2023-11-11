@@ -32,60 +32,50 @@ set.seed(235)
 # Given raw input data and department dept, gives us the 
 # cleaned matrix X as defined https://campuswire.com/c/G06C55090/feed/364
 # rows are stores, columns are weeks 
-get_dept_matrix = function(train, dept){
+spread_df = function(train, dept){
+  
   X = train %>%
     filter(Dept == dept) %>%
     select(Store, Date, Weekly_Sales) %>%
-    spread(Store, Weekly_Sales)
+    spread(key=Store, value=Weekly_Sales)
+  
+  # preserve info from X
+  dates = X[, 1]
+  X = X[, -1] # drop date row,
+  
+  stores = colnames(X)
   
   # replace NAs with 0 
-  #X[is.na(X)] = 0 
+  X[is.na(X)] = 0 
   
-  # drop date row, and take transpose
-  #X = X[, -1]
-  #X = t(X)
+  # take transpose
+  X = t(X)
   
-  return(X)
+  spread_out = list(X=X, stores=stores, dates=dates)
+  
+  return(spread_out)
 }
 
-# Replaces na values with 0. Get average sales for store. Create SVD.
-get_svd = function(X){
-  m = ncol(X)-1
-  n = nrow(X)
-  d = min(m, n, 8)
+gather_mat = function(spread_out, dept) {
   
-  # remove store means
-  store_means = rowMeans(X)
-  demeaned = X - store_means
+  # Change to df and add store column names back
+  X_df = data.frame(t(spread_out$X))
+  colnames(X_df) = spread_out$stores
+  X_df$Date = spread_out$dates
   
-  # implement SVD 
-  svd_results = svd(demeaned)
+  # now apply gather to pivot table back to tall
+  gathered = X_df %>% 
+    gather(key="Store", value="Weekly_Sales", -Date) %>% 
+    mutate(Store = as.integer(Store))
   
-  u * s * vt
+  # re-add department
+  gathered$Dept = dept
+  gathered$Dept = as.integer(dept)
   
-  
-  
-  
-  
-  
-  if(min(n,m)>1){
-  svd_decom = svd(X_less_mean)
-  U = svd_decom$u[,1:d]
-  D = diag(svd_decom$d[1:d])
-  Vt = t(svd_decom$v[,1:d])
-  #if(DEBUG) { 
-  #  cat("dept_svd 2 U",nrow(svd_decom$u),"x",ncol(svd_decom$u),
-  #      "D",length(svd_decom$d),"x",length(svd_decom$d),
-  #      "Vt",nrow(svd_decom$v),"x",ncol(svd_decom$v),"\n") } 
-  X_s = U %*% D %*% Vt + store_mean
-  } else {
-  X_s =  X_less_mean + store_mean
-  }
-  
-  #print(X_s)
-  #if(DEBUG) { cat("dept_svd 3 n",length(X_s),"m",nrow(X_s),"\n") } 
-  return(X_s)
+  return(gathered)
 }
+
+
 
 # given our matrix X, generate a design matrix that we will feed into lm
 get_design_matrix = function(X, column_names, i){
@@ -204,10 +194,33 @@ for (fold_num in 1:num_folds) {
     cat("Department", current_dept, "of", full_depts, "\n")
     current_dept = current_dept + 1
     
-    # X is 
-    #X = get_dept_matrix(train, dept)
     
-    #X_tilde = get_svd(X)
+    X = get_x_mat(train, dept)
+    
+    m = ncol(X)
+    n = nrow(X)
+    r = min(m, n, 8)
+    
+    # if dataset is big enough to do SVD, do it, else just use X
+    if (r == 8) {
+      # remove store means
+      store_means = rowMeans(X)
+      demeaned = X - store_means
+      
+      
+      # implement SVD 
+      svd_results = svd(demeaned)
+      u = svd_results$u
+      vt = t(svd_results$v)
+      d = diag(svd_results$d)
+      x_tilde = u[, 1:r] %*% d[1:r, 1:r] %*% t(v[, 1:r]) + store_means
+    } else {
+      x_tilde = X
+    }
+    
+    # now convert back 
+    
+    
     
     # now iterate through the stores we have
     test_dept = test %>% filter(Dept == dept)
