@@ -201,13 +201,12 @@ for (fold_num in 1:num_folds) {
       store_means = rowMeans(X)
       demeaned = X - store_means
       
-      
       # implement SVD 
       svd_results = svd(demeaned)
       u = svd_results$u
       vt = t(svd_results$v)
       d = diag(svd_results$d)
-      x_tilde = u[, 1:r] %*% d[1:r, 1:r] %*% t(v[, 1:r]) + store_means
+      x_tilde = u[, 1:r] %*% d[1:r, 1:r] %*% vt[1:r, ] + store_means
     } else {
       x_tilde = X
     }
