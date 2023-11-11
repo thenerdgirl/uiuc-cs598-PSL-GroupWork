@@ -57,29 +57,49 @@ In each epoch, before going through the dataset, consider randomizing the order 
 
 ```{r part1-1, eval = TRUE}
 
-pegasos = function(test, train, epochs=20) {
+pegasos = function(test, train, epochs=20, lambda=1) {
   
   n = nrow(train)
+  m = ncol(train)
   
   # initialize params
-  B = rep(0, p)
+  B = rep(0, m-1)
   a = 0
   t = 0
+  lambda = 4
   
   for(epoch in 1:epochs) {
+    # shuffle input
+    shuffled =  train[sample(nrow(train)), ]
+
+    # iterate through points
     for (i in 1:n) {
+      cat(t, eta, B[1], a, "\n")
       
+      # get x and y
+      x = shuffled[i, -m]
+      y = shuffled[i, m]
       
+      # this term is used a bunch below
+      eval_term = y * (sum(x * B) + a)
+      
+      # calc subgradient terms delta t and del t
+      if (eval_term < 1) {
+        delta_t = lambda * B - y*x
+        del_t = -y
+      } else {
+        delta_t = lambda*B
+        del_t = 0
+      }
+      
+      # update params 
+      t = t + 1
+      eta = 1 / (t * lambda)
+      B = B - eta * delta_t
+      a = a - eta * del_t
     }
-    
   }
-  
-  
-  
 }
-
-
-
 ```
 
 
