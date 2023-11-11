@@ -24,7 +24,7 @@ for (package in packages) {
 DEBUG = TRUE
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
-num_folds = 3
+num_folds = 10
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
@@ -181,7 +181,6 @@ post_process = function(prediction, threshold=1.1) {
   return (prediction)
 }
 
-
 ############## Evaluation Function ############## 
 myeval = function(){
   file_path = paste0('Proj2_Data/test_with_label.csv')
@@ -210,7 +209,6 @@ myeval = function(){
 }
 
 ############## Prediction Script Body ############## 
-
 if (!DEBUG) {
   # in production mode, we just evaluate the files in this dir and output results
   file_dir = ""
@@ -238,14 +236,14 @@ if (!DEBUG) {
   
   # output metrics for report
   #header
-  cat('Fold\tWAE\tTIME (S)\n')
+  cat('Fold\t--WAE--\t\tTIME (S)\n')
   
   for (fold_num in 1:num_folds) {
     # rows
     cat(sprintf('%d\t%.3f\t%.2f\n',
                 fold_num, 
-                run_times[fold_num], 
-                wae[fold_num]))
+                wae[fold_num], 
+                run_times[fold_num]))
   }
   cat('\n\n')
   
