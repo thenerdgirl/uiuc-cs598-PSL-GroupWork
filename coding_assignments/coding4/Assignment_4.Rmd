@@ -1,0 +1,427 @@
+---
+title: "Coding Assignment 4"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Part 1 (some), Part 2 |
+| Michael Miller | Part 1 |
+| Joe May        | Part 1 (some)|
+
+Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/432)
+
+# Part 1: Gaussian Mixtures
+
+Implement the EM algorithm from scratch for a p-dimensional Gaussian mixture model with G components:
+
+## Part 1-1: Estep function
+This function should return an n-by-G matrix, where the (i, j)th entry represents the conditional probability P(Zi = k | xi). Here i ranges from 1 to n and k ranges from 1 to G.
+
+```{r part1-1, eval = TRUE}
+Estep = function(data, G, init_params) {
+  # Use Approach 2 (https://campuswire.com/c/G06C55090/feed)
+  A = t(data) # transpose of the data matrix
+  d = ncol(data) # data dimensions 
+  sigma = init_params$Sigma
+  
+  # get density for each component, at end we will row sum to get prob
+  density = matrix(0, nrow=nrow(data), ncol=G)
+  
+  # iterate through G
+  for (k in 1:G) {
+    u = init_params$mean[,k]
+    p = init_params$prob[k]
+    
+    # this is all to calculate the exponent of pdf function, using approach 2
+    demeaned = (A - u)
+    matrix_multiplied = solve(sigma) %*% demeaned
+    element_multiplied = matrix_multiplied * demeaned
+    summed = colSums(element_multiplied)
+    exponent = -0.5 * summed
+    
+    constant = 1 / sqrt((2*pi)^d * det(sigma))
+    
+    densities = constant * exp(exponent)
+    
+    # now concat the columns
+    density[, k] = densities * p
+  }
+  
+  # now sum across rows to get probability of each density 
+  phi = density / rowSums(density)
+  return(phi)
+}
+```
+
+## Part 1-2: Mstep function
+This function should return the updated parameters for the Gaussian mixture model.
+
+```{r part1-2, eval = TRUE}
+Mstep = function(data, G, init_params, post_prob) {
+  
+  n = nrow(data)
+  out_params = init_params
+  # get new prob
+  out_params$prob = colSums(post_prob) / n
+  
+  # get new means
+  numerator = t(data) %*% post_prob
+  denom = colSums(post_prob)
+  
+  # we want to perform elementwise division, but by rows instead of cols
+  new_mean = sweep(numerator, 2, denom, "/")
+  out_params$mean = new_mean
+  
+  # solve for new sigma 
+  S = matrix(0, nrow=ncol(data), ncol=ncol(data))
+  
+    # iterate through G
+  for (k in 1:G) {
+    u = out_params$mean[, k]
+    p = post_prob[, k]
+    
+    tmp = t(t(data) - u)
+    
+    S_temp = t(tmp) %*% diag(p) %*% tmp
+    
+    S = S + S_temp
+  }
+  
+  sigma_max = S / nrow(data)
+  out_params$Sigma = sigma_max
+  return(out_params)
+}
+```
+
+## Part 1-3: loglik function
+This function computes the log-likelihood of the data given the parameters.
+```{r part1-3, eval = TRUE}
+loglik = function(data, G, init_params) {
+  A = t(data) # transpose of the data matrix
+  d = ncol(data) # data dimensions 
+  sigma = init_params$Sigma
+  
+  # iterate over G and sum
+  g_sum = rep(0, nrow(data))
+  for (k in 1:G) {
+    #u = init_params$mean[,k]
+    u = init_params$mean[,k]
+    p = init_params$prob[k]
+    
+    # this is all to calculate the exponent of pdf function, using approach 2
+    demeaned = (A - u)
+    matrix_multiplied = solve(sigma) %*% demeaned
+    element_multiplied = matrix_multiplied * demeaned
+    summed = colSums(element_multiplied)
+    exponent = -0.5 * summed
+    
+    constant = 1 / sqrt((2*pi)^d * det(sigma))
+    
+    likelihood = p * constant * exp(exponent)
+  
+    g_sum = g_sum + likelihood
+  }
+  
+  # now return sum of all log liks
+  logged = log(g_sum)
+  
+  # sum over n
+  out = sum(logged)
+  return(out)
+}
+```
+
+## Part 1-4: myEM function (main function):  
+Inside this function, you can call the Estep, Mstep, and loglik functions.  
+### Input
+- data: The dataset.
+- G : The number of components.
+- Initial parameters.
+- itmax: The number of iterations.
+### Output:
+- prob: A G-dimensional probability vector (p1,…,pG)
+- mean: A p-by-G matrix with the k-th column being μk, the p-dimensional mean for the k-th Gaussian component.
+- Sigma: A p-by-p covariance matrix Σ shared by all G components;
+- loglik: A number equal to ∑ni=1log[∑Gk=1pk⋅N(x;μk,Σ)].
+
+```{r part1-4, eval = TRUE}
+myEM = function(data, G, init_params, itmax) {
+  for(i in 1:itmax) {
+    post_prob = Estep(data, G, init_params)
+    
+    init_params = Mstep(data, G, init_params, post_prob)
+    
+    # add loglik to list of outputs and return 
+    init_params[['loglik']] = loglik(data, G, init_params)
+  }
+  
+  return(init_params)
+}
+```
+
+
+
+## Part1-5: Testing
+### Test Case 1: G = 2
+```{r part1-5-1, eval = TRUE}
+# load datset
+test_df = read.table('faithful.dat')
+n = nrow(test_df)
+data=as.matrix(test_df)
+
+###### Case 1: G = 2. Using variables from assignment ###### 
+G = 2
+p1 = 10/n
+p2 = 1 - p1
+
+# slice x into x1 and x2 to simplify code later
+x1 = as.matrix(test_df[1:10, ])
+x2 = as.matrix(test_df[11:n,])
+
+# u1 is mean of first 10 samples, u2 is mean of remaining
+u1 = colMeans(x1)
+u2 = colMeans(x2)
+
+# calculate sigma using provided eqn
+sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + (t(x2) - u2) %*% t(t(x2) - u2) )
+
+itmax = 20
+
+# gather initial params into list
+init_params = list(prob=c(p1, p2), mean=cbind(u1, u2), Sigma=sigma)
+
+# evaluate 
+out = myEM(data=data, 
+           G=G, 
+           init_params=init_params, 
+           itmax=itmax)
+
+print(out)
+```
+
+### Test Case 2: G = 3
+```{r part1-5-2, eval = TRUE}
+
+######  Case 2: G = 3 ###### 
+G = 3
+p1 = 10/n
+p2 = 20/n
+p3 = 1 - p1 - p2
+
+# slice x into x1 x2, and x3 to simplify code later
+x1 = as.matrix(test_df[1:10, ])
+x2 = as.matrix(test_df[11:30, ])
+x3 = as.matrix(test_df[31:n, ])
+
+
+# u1 is mean of first 10 samples, u2 is mean of remaining
+u1 = colMeans(x1)
+u2 = colMeans(x2)
+u3 = colMeans(x3)
+
+# calculate sigma using provided eqn
+sigma = 1/n * ((t(x1) - u1) %*% t(t(x1) - u1) + 
+               (t(x2) - u2) %*% t(t(x2) - u2) +
+               (t(x3) - u3) %*% t(t(x3) - u3))
+
+max_iteration = 20
+
+# gather initial params into list
+init_params = list(prob=c(p1, p2, p3), mean=cbind(u1, u2, u3), Sigma=sigma)
+
+# evaluate 
+out = myEM(data=data, 
+           G=G, 
+           init_params=init_params, 
+           itmax=itmax)
+
+print(out)
+```
+
+# Part 2: HMM
+
+Implement the Baum-Welch (i.e., EM) algorithm and the Viterbi algorithm from scratch for a Hidden Markov Model (HMM) that produces an outcome sequence of discrete random variables with three distinct values.
+
+## Part 2-1: Baum-Welch Algorihtm
+
+The Baum-Welch Algorihtm is the EM algorithm for the HMM. Create a function named BW.onestep designed to carry out the E-step and M-step. This function should then be called iteratively within myBW.
+
+```{r part2-1, eval = TRUE}
+# forward/backward algorithms adapted from https://www.adeveloperdiary.com/data-science/machine-learning/forward-and-backward-algorithm-in-hidden-markov-model/
+
+forward_prob = function(x, params) {
+  T = length(x)
+  A = params$A
+  B = params$B
+  w = params$w
+  mz = params$mz
+  
+  # Calculate first row
+  alpha = matrix(0, T, mz)
+  alpha[1,] = w*B[, x[1]]
+  
+  # Recursive part
+  for(t in 2:T) {
+    temp = alpha[t-1,] %*% A
+    alpha[t,] = temp*B[, x[t]]
+  }
+  
+  return(alpha)
+}
+
+backward_prob = function(x, params) {
+  T = length(x)
+  A = params$A
+  B = params$B
+  w = params$w
+  mz = params$mz
+  
+  # Initialize beta as a matrix of ones, since the last row is all ones
+  beta = matrix(1, T, mz)
+  
+  # Recursive part, but backwards
+  for(t in (T-1):1) {
+    temp = as.matrix(beta[t+1,]*B[, x[t+1]])
+    beta[t,] = t(A %*% temp)
+  }
+  
+  return(beta)
+}
+
+BW.onestep = function(x, params) {
+  T = length(x)
+  A = params$A
+  B = params$B
+  w = params$w
+  mx = params$mx
+  mz = params$mz
+  
+  # Compute forward, backward probabilities
+  alpha = forward_prob(x, params)
+  beta = backward_prob(x, params)
+  
+  # Compute gamma (E-step)
+  gamma = array(0, dim=c(mz, mz, T-1))
+  for(t in 1:(T-1)) {
+    for(i in 1:mz) {
+      for(j in 1:mz) {
+        gamma[i, j, t] = alpha[t, i] * A[i, j] * B[j, x[t+1]] * beta[t+1, j]
+      }
+    }
+  }
+
+  # Update param A (M-step)
+  A = rowSums(gamma, dims = mz)
+  A = A/rowSums(A)
+  
+  # Update param B (M-step again)
+  temp = apply(gamma, c(1,3), sum)
+  temp = cbind(temp, colSums(gamma[, , T-1]))
+  for(i in 1:mx) {
+    B[, i] = rowSums(temp[, which(x==i)])
+  }
+  B = B/rowSums(B)
+  
+  params$A = A
+  params$B = B
+  return(params)
+}
+
+myBW = function(x, params, itmax) {
+  for(i in 1:itmax) {
+    params = BW.onestep(x, params)
+  }
+  return(params)
+}
+```
+
+## Part 2-2: Viterbi Algorithm
+
+This algorithm outputs the most likely latent sequence considering the data and the MLE of the parameters.
+
+`myViterbi:`
+Input:
+- data: a T-by-1 sequence of observations
+- parameters: mx, mz, w, A and B
+Output:
+- Z: A T-by-1 sequence where each entry is a number ranging from 1 to mz.
+
+```{r part2-2, eval = TRUE}
+myViterbi = function(data, params) {
+  T = length(data)
+  A = params$A
+  B = params$B
+  w = params$w
+  mx = params$mx
+  mz = params$mz
+  
+  # Compute delta in log scale
+  delta = matrix(0, T, mz)
+  delta[1,] = log(w) + log(B)[, data[1]]
+  
+  # Recursive formula, super similar to alpha calculation from BW
+  for(t in 2:T) {
+    for(i in 1:mz) {
+      delta[t, i] = max(delta[t-1,] + log(A[, i])) + log(B[i, data[t]]) 
+    }
+  }
+  
+  # Z calculation using delta
+  # Similar to the backwards calculation of beta
+  Z = rep(0, T)
+  Z[T] = which.max(delta[T,])
+  for(t in (T-1):1) {
+    Z[t] = which.max(delta[t,] + log(A[, Z[t+1]]))
+  }
+  
+  return(Z)
+}
+
+```
+
+## Part 2-3: Testing
+
+```{r part2-3, eval = TRUE}
+data = scan("coding4_part2_data.txt")
+
+mz = 2
+mx = 3
+
+A = matrix(1, mz, mz)
+B = matrix(1:6, mz, mx)
+w = c(0.5, 0.5)
+
+# Initialize A, B
+A = A / rowSums(A)
+B = B / rowSums(B)
+
+params = list(A = A,
+              B = B,
+              w = w,
+              mx = mx,
+              mz = mz
+              )
+
+# Get output
+output = myBW(data, params, 100)
+Z = myViterbi(data, output)
+
+output$A
+output$B
+Z
+```
