@@ -41,14 +41,13 @@ spread_df = function(train, dept){
   
   # preserve info from X
   dates = X[, 1]
-  X = X[, -1] # drop date row,
-  
-  stores = colnames(X)
+  stores = colnames(X)[-1]
   
   # replace NAs with 0 
   X[is.na(X)] = 0 
   
-  # take transpose
+  # drop date row, take transpose
+  X = X[, -1]
   X = t(X)
   
   spread_out = list(X=X, stores=stores, dates=dates)
@@ -56,10 +55,10 @@ spread_df = function(train, dept){
   return(spread_out)
 }
 
-gather_mat = function(spread_out, dept) {
+gather_mat = function(X, spread_out, dept) {
   
   # Change to df and add store column names back
-  X_df = data.frame(t(spread_out$X))
+  X_df = data.frame(t(X))
   colnames(X_df) = spread_out$stores
   X_df$Date = spread_out$dates
   
@@ -72,7 +71,11 @@ gather_mat = function(spread_out, dept) {
   gathered$Dept = dept
   gathered$Dept = as.integer(dept)
   
-  return(gathered)
+  # now get back Wk and Yr
+  out = gathered %>% 
+    mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
+    mutate(Yr = year(Date))
+  return(out)
 }
 
 
@@ -167,35 +170,26 @@ for (fold_num in 1:num_folds) {
   out = test_raw
   out$Weekly_Pred = 0
   
-  # we use efficient cleaning as defined https://liangfgithub.github.io/Proj/F23_R_Proj2_hints.html#Efficient_Implementation_for_III
-  
-  # find the unique pairs of (Store, Dept) combo that appeared in both training and test sets
-  train_pairs = train_raw[, 1:2] %>% count(Store, Dept) %>% filter(n != 0)
-  test_pairs = test_raw[, 1:2] %>% count(Store, Dept) %>% filter(n != 0)
-  both_pairs = intersect(train_pairs[, 1:2], test_pairs[, 1:2])
-  
-  # pick out the needed training samples, convert to dummy coding, then put them into a list
-  train = both_pairs %>% 
-    left_join(train, by = c('Store', 'Dept')) %>% 
+  # go ahead and clean test now, we will clean train later
+  test = test_raw %>%
     mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
-    mutate(Yr = year(Date))
-  
-  test = both_pairs %>% 
-    left_join(test, by = c('Store', 'Dept')) %>% 
-    mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
-    mutate(Yr = year(Date))
+    mutate(Yr = year(Date)) 
   
   #counter for printing
   current_dept = 1
   full_depts = length(unique(test$Dept))
   
+  # we will only evaluate when both test and train have the department
+  dept_to_eval = intersect(unique(test$Dept), unique(train$Dept))
+  
   # iterate through departments 
-  for(dept in unique(test$Dept)){
+  for(dept in dept_to_eval){
     cat("Department", current_dept, "of", full_depts, "\n")
     current_dept = current_dept + 1
     
+    spread_out = spread_df(train, dept)
     
-    X = get_x_mat(train, dept)
+    X = spread_out$X
     
     m = ncol(X)
     n = nrow(X)
@@ -219,16 +213,13 @@ for (fold_num in 1:num_folds) {
     }
     
     # now convert back 
+    smoothed_train = gather_mat(x_tilde, spread_out, dept)
     
-    
-    
-    # now iterate through the stores we have
-    test_dept = test %>% filter(Dept == dept)
-    stores = unique(test_dept$Store)
-    for(store in stores){
+    # now iterate through the stores we have)
+    for(store in unique(smoothed_train$Store)){
       
       # filter for just the store we want
-      train_dept_store = train %>% filter(Store == store & Dept == dept)
+      train_dept_store = smoothed_train %>% filter(Store == store)
       test_dept_store = test %>% filter(Store == store & Dept == dept)
       
       # get design matrix
