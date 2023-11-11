@@ -22,9 +22,9 @@ for (package in packages) {
 }
 
 DEBUG = TRUE
+if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
-num_folds = 3
-
+num_folds = 10
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
@@ -78,70 +78,16 @@ gather_mat = function(X, spread_out, dept) {
   return(out)
 }
 
-############## Evaluation Function ############## 
-myeval = function(){
-  file_path = paste0('Proj2_Data/test_with_label.csv')
-  test_with_label = read.csv(file_path)
-  wae = rep(0, num_folds)
+process_fold = function(file_dir){
   
-  for (i in 1:num_folds) {
-    file_path = paste0('Proj2_Data/fold_', i, '/test.csv')
-    test = read.csv(file_path)
-    test =  test %>%
-      select(-IsHoliday) %>%
-      left_join(test_with_label, by = c('Date', 'Store', 'Dept'))
-    
-    file_path = paste0('Proj2_Data/fold_', i, '/mypred.csv')
-    test_pred = read.csv(file_path)
-    
-    new_test <- test %>%
-      left_join(test_pred, by = c('Date', 'Store', 'Dept'))
-    
-    actuals = new_test$Weekly_Sales
-    preds = new_test$Weekly_Pred
-    weights = if_else(new_test$IsHoliday.x, 5, 1)
-    wae[i] = sum(weights * abs(actuals - preds)) / sum(weights)
-  }
-  return(wae)
-}
-
-post_process = function(prediction, threshold=1.1) { 
-  # given our prediction matrix, perform post processing. 
-  
-  # approach is per campuswire, with default value for threshold taken from 
-  # @davidthaler https://github.com/davidthaler/Walmart_competition_code/blob/master/postprocess.R
-  
-  #@todo figure out if we need to account for a 2.5 vs 2 day shift 
-  
-  # get baseline sales
-  
-  # get surge sales
-  
-  # compare surge to baseline. If surged, shift excess sales 
-  
-  
-  
-  return (prediction)
-  }
-
-
-
-############## Prediction Script Body ############## 
-if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
-
-for (fold_num in 1:num_folds) {
-  if(DEBUG) { cat("Fold",fold_num, "\n") } 
-  
-  # Initialize prediction frame, fold name, and gets training and testing data.
-  file_dir = paste0('fold_', as.character(fold_num))
-  
-  train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
-  test_raw = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
+  train_raw = read.csv(paste0(file_dir, '/train.csv'))
+  test_raw = read.csv(paste0(file_dir, '/test.csv')) 
   
   # go ahead and clean test now, we will clean train later
   test = test_raw %>%
     mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
-    mutate(Yr = year(Date)) 
+    mutate(Yr = year(Date))
+  train = train_raw
   
   # preallocate output matrix
   out = test_raw
@@ -156,7 +102,8 @@ for (fold_num in 1:num_folds) {
   
   # iterate through departments 
   for(dept in dept_to_eval){
-    cat("Department", current_dept, "of", full_depts, "\n")
+    # log for debugging
+    if (DEBUG) {cat("Department", current_dept, "of", full_depts, "\n")}
     current_dept = current_dept + 1
     
     spread_out = spread_df(train, dept)
@@ -166,11 +113,10 @@ for (fold_num in 1:num_folds) {
     # if dataset is big enough to do SVD, do it, else just use X
     r = min(dim(X), 8)
     if (r == 8) {
-      # remove store means
+      # implement SVD 
       store_means = rowMeans(X)
       demeaned = X - store_means
       
-      # implement SVD 
       svd_results = svd(demeaned)
       u = svd_results$u
       vt = t(svd_results$v)
@@ -215,17 +161,102 @@ for (fold_num in 1:num_folds) {
     }
   }
   
-  pred_path = paste0('Proj2_Data/', file_dir, '/mypred.csv')
+  pred_path = paste0(file_dir, '/mypred.csv')
   readr::write_csv(out, pred_path)
 }
 
-############## Evaluate Forecast and Estimate Grade ############## 
-wae = myeval()
-if(DEBUG) {
-  cat(wae, '\n')
+post_process = function(prediction, threshold=1.1) { 
+  # given our prediction matrix, perform post processing. 
+  
+  # approach is per campuswire, with default value for threshold taken from 
+  # @davidthaler https://github.com/davidthaler/Walmart_competition_code/blob/master/postprocess.R
+  
+  #@todo figure out if we need to account for a 2.5 vs 2 day shift 
+  
+  # get baseline sales
+  
+  # get surge sales
+  
+  # compare surge to baseline. If surged, shift excess sales 
+  return (prediction)
+}
+
+
+############## Evaluation Function ############## 
+myeval = function(){
+  file_path = paste0('Proj2_Data/test_with_label.csv')
+  test_with_label = read.csv(file_path)
+  wae = rep(0, num_folds)
+  
+  for (i in 1:num_folds) {
+    file_path = paste0('Proj2_Data/fold_', i, '/test.csv')
+    test = read.csv(file_path)
+    test =  test %>%
+      select(-IsHoliday) %>%
+      left_join(test_with_label, by = c('Date', 'Store', 'Dept'))
+    
+    file_path = paste0('Proj2_Data/fold_', i, '/mypred.csv')
+    test_pred = read.csv(file_path)
+    
+    new_test <- test %>%
+      left_join(test_pred, by = c('Date', 'Store', 'Dept'))
+    
+    actuals = new_test$Weekly_Sales
+    preds = new_test$Weekly_Pred
+    weights = if_else(new_test$IsHoliday.x, 5, 1)
+    wae[i] = sum(weights * abs(actuals - preds)) / sum(weights)
+  }
+  return(wae)
+}
+
+############## Prediction Script Body ############## 
+
+if (!DEBUG) {
+  # in production mode, we just evaluate the files in this dir and output results
+  file_dir = ""
+  process_fold(file_dir)
+} else {
+  #preallocate run time holder
+  run_times = rep(0, num_folds)
+  
+  
+  # in debug mode, process all folds 
+  for (fold_num in 1:num_folds) {
+    cat("Fold",fold_num, "\n")
+    file_dir = paste0('Proj2_Data/fold_', as.character(fold_num))
+    
+    clock_start = Sys.time()
+    process_fold(file_dir)
+    clock_stop = Sys.time()
+    
+    # save time
+    run_times[fold_num] = as.numeric(difftime(clock_stop, clock_start, units = "secs"))
+  }
+  
+  # evaluate results 
+  wae = myeval()
+  
+  
+  
+  # output metrics for report
+  #header
+  cat('\tWAE\tTIME (S)\n')
+  
+  for (fold_num in 1:num_folds) {
+    # rows
+    cat(sprintf('%.3f\t%.4f\t%.4f\t%.3f\t%.3f\t\n',
+                fold_num, 
+                rmse_linear, 
+                rmse_tree, 
+                time_linear, 
+                time_tree ))
+  }
+  }
+  
+  
+  
   avg_wae=mean(wae)
   cat('Average wae', avg_wae,'\n')
-
   # provide max points given average wae and estimate letter grade
   if(avg_wae > 1680){
     s = 2.5 + 1
@@ -252,4 +283,4 @@ if(DEBUG) {
     cat('This would yield a max of',s,'points\n')
     cat('A+ 100% Perfection')
   }
-} 
+}
