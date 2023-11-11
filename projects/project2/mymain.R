@@ -24,7 +24,7 @@ for (package in packages) {
 DEBUG = TRUE
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
-num_folds = 10
+num_folds = 7
 set.seed(235)
 
 #######  Functions Called in Main  ####### 
@@ -137,8 +137,8 @@ process_fold = function(file_dir){
       test_dept_store = test %>% filter(Store == store & Dept == dept)
       
       # get design matrix
-      train_design = model.matrix(~ Yr + Wk, train_dept_store)
-      test_design = model.matrix(~ Yr + Wk, test_dept_store)
+      train_design = model.matrix(~ Yr + I(Yr^2) + Wk, train_dept_store)
+      test_design = model.matrix(~ Yr + I(Yr^2) + Wk, test_dept_store)
       
       # train model
       model_coef = lm(train_dept_store$Weekly_Sales ~ train_design)$coef
@@ -161,24 +161,11 @@ process_fold = function(file_dir){
     }
   }
   
+  # post process by shifting some sales 
+  
+  
   pred_path = paste0(file_dir, '/mypred.csv')
   readr::write_csv(out, pred_path)
-}
-
-post_process = function(prediction, threshold=1.1) { 
-  # given our prediction matrix, perform post processing. 
-  
-  # approach is per campuswire, with default value for threshold taken from 
-  # @davidthaler https://github.com/davidthaler/Walmart_competition_code/blob/master/postprocess.R
-  
-  #@todo figure out if we need to account for a 2.5 vs 2 day shift 
-  
-  # get baseline sales
-  
-  # get surge sales
-  
-  # compare surge to baseline. If surged, shift excess sales 
-  return (prediction)
 }
 
 ############## Evaluation Function ############## 
