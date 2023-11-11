@@ -23,7 +23,7 @@ for (package in packages) {
 
 DEBUG = TRUE
 
-num_folds = 1
+num_folds = 3
 
 set.seed(235)
 
@@ -78,29 +78,6 @@ gather_mat = function(X, spread_out, dept) {
   return(out)
 }
 
-
-
-# given our matrix X, generate a design matrix that we will feed into lm
-get_design_matrix = function(X, column_names, i){
-  
-  smoothed = as.data.frame(t(Xmn))
-  
-  colnames(smoothed) = column_names
-  #if(DEBUG) { cat("get_reshape 4 n",nrow(Xi),"m",length(Xi),"\n") } 
-  #print(colnames(smoothed))
-  
-  smoothed$Date = Xi[,1]
-  #if(DEBUG) { cat("get_reshape 5 n",nrow(smoothed),"m",length(smoothed),"\n") } 
-  #print(smoothed)
-  
-  pivot_smooth = gather(smoothed, key = "Store", value = "Prediction", -Date)
-  #if(DEBUG) { cat("get_reshape 6 n",nrow(pivot_smooth),"m",length(pivot_smooth),"\n") } 
-  
-  pivot_smooth$Dept = i
-  #if(DEBUG) { cat("get_reshape 7 n",length(pivot_smooth),"m",nrow(pivot_smooth),"\n") }
-  return(pivot_smooth)
-}
-
 ############## Evaluation Function ############## 
 myeval = function(){
   file_path = paste0('Proj2_Data/test_with_label.csv')
@@ -152,28 +129,23 @@ post_process = function(prediction, threshold=1.1) {
 ############## Prediction Script Body ############## 
 if (DEBUG) {print('Running in debug mode! Disable before submitting!')}
 
-if(DEBUG) {
-  # print table header
-  cat('\t-----wae-----\t---Time (S)---\n')
-} 
-
 for (fold_num in 1:num_folds) {
   if(DEBUG) { cat("Fold",fold_num, "\n") } 
   
   # Initialize prediction frame, fold name, and gets training and testing data.
   file_dir = paste0('fold_', as.character(fold_num))
   
-  train_raw = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
+  train = read.csv(paste0('Proj2_Data/',file_dir, '/train.csv'))
   test_raw = read.csv(paste0('Proj2_Data/',file_dir, '/test.csv')) 
-  
-  # preallocate output matrix
-  out = test_raw
-  out$Weekly_Pred = 0
   
   # go ahead and clean test now, we will clean train later
   test = test_raw %>%
     mutate(Wk = factor(ifelse(year(Date) == 2010, week(Date) - 1, week(Date)), levels = 1:52)) %>%
     mutate(Yr = year(Date)) 
+  
+  # preallocate output matrix
+  out = test_raw
+  out$Weekly_Pred = 0
   
   #counter for printing
   current_dept = 1
@@ -191,11 +163,8 @@ for (fold_num in 1:num_folds) {
     
     X = spread_out$X
     
-    m = ncol(X)
-    n = nrow(X)
-    r = min(m, n, 8)
-    
     # if dataset is big enough to do SVD, do it, else just use X
+    r = min(dim(X), 8)
     if (r == 8) {
       # remove store means
       store_means = rowMeans(X)
