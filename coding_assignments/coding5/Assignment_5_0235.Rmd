@@ -63,10 +63,10 @@ pegasos = function(test, train, epochs=20, lambda=1) {
   m = ncol(train)
   
   # initialize params
-  B = rep(0, m-1)
+  # note we initialize B randomly because with 0s it gets stuck at 0
+  B = runif(m-1)
   a = 0
   t = 0
-  lambda = 4
   
   for(epoch in 1:epochs) {
     # shuffle input
@@ -74,7 +74,7 @@ pegasos = function(test, train, epochs=20, lambda=1) {
 
     # iterate through points
     for (i in 1:n) {
-      cat(t, eta, B[1], a, "\n")
+      cat(t, eta, as.numeric(B[1]), a, "\n")
       
       # get x and y
       x = shuffled[i, -m]
