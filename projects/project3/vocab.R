@@ -28,58 +28,38 @@ stop_words = c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you
 # top points vocab size
 vocab_size = 1000
 
-# use this loop to combine all the review data
-
 train = read.table("split_1/train.tsv", stringsAsFactors = FALSE, header = TRUE)
-# test = read.table("split_1/test.tsv", stringsAsFactors = FALSE, header = TRUE)
 
 for (split_num in 2:5) {
   split_dir =  paste0('split_', as.character(split_num))
-
   temp_train = read.table(paste0(split_dir, '/train.tsv'), stringsAsFactors = FALSE, header = TRUE)
-  # temp_test = read.table(paste0(split_dir, '/train.tsv'), stringsAsFactors = FALSE, header = TRUE)
-
   train = rbind(train, temp_train)
-  # test = rbind(train, temp_test)
 }
 
+##### Professor-Provided Code #####
 # clear out the html tags in the review
 train$review = gsub('<.*?>', ' ', train$review)
-# test$review = gsub('<.*?>', ' ', test$review)
 
 # create an iterator over tokens
-it_train = itoken(train$review,
-                  preprocessor = tolower,
-                  tokenizer = word_tokenizer)
+it_train = itoken(train$review, preprocessor = tolower, tokenizer = word_tokenizer)
 
 # build the vocabulary
-t1 = Sys.time()
-tmp.vocab = create_vocabulary(it_train,
-                              stopwords = stop_words,
-                              ngram = c(1L,4L))
-print(difftime(Sys.time(), t1, units = 'sec'))
+tmp.vocab = create_vocabulary(it_train, stopwords = stop_words, ngram = c(1L,4L))
 
 # prune the vocabulary
-t2 = Sys.time()
-tmp.vocab = prune_vocabulary(tmp.vocab, term_count_min = 10,
-                             doc_proportion_max = 0.5,
-                             doc_proportion_min = 0.001)
-print(difftime(Sys.time(), t2, units = 'sec'))
+tmp.vocab = prune_vocabulary(tmp.vocab, term_count_min = 10, doc_proportion_max = 0.5, doc_proportion_min = 0.001)
 
 # construct a document-term matrix
-t3 = Sys.time()
 dtm_train = create_dtm(it_train, vocab_vectorizer(tmp.vocab))
-print(difftime(Sys.time(), t3, units = 'sec'))
+##### Professor-Provided Code #####
 
 # fit the model
 # StackOverflow: why glmnet was right here and not cv.glmnet: https://stackoverflow.com/questions/29311323/difference-between-glmnet-and-cv-glmnet-in-r
-t4 = Sys.time()
 model = glmnet(x = dtm_train, y = train$sentiment, alpha = 1, family="binomial")
-print(difftime(Sys.time(), t4, units = 'sec'))
 
-a = colSums(model$beta != 0)
-col_index = unname(which.max(which(a < vocab_size)))
+# remove beta values less than our intended vocab size to keep vocab size low
+nonzero_beta = colSums(model$beta != 0)
+col_index = unname(which.max(which(nonzero_beta < vocab_size)))
 vocabulary = colnames(dtm_train)[which(model$beta[, col_index] != 0)]
 
-write.table(vocabulary, file = "myvocab.txt", row.names = FALSE,
-            col.names = FALSE, sep = "", quote = FALSE)
+write.table(vocabulary, file = "myvocab.txt", row.names = FALSE, col.names = FALSE, sep = "", quote = FALSE)
