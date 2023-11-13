@@ -58,7 +58,7 @@ if(DEBUG) {
     prediction = predict(model, s = model$lambda.min, newx = dtm_test, type = 'response')
     
     # Gather the output dataframe with ID and numeric prediction
-    output = data.frame(id = test$id, pred = as.numeric(paste(unlist(prediction))))
+    output = data.frame(id = test$id, prob = as.numeric(paste(unlist(prediction))))
     
     # evaluate the area under curve
     test_y = read.table(paste0(split_dir, '/test_y.tsv'), header = TRUE)
@@ -67,7 +67,7 @@ if(DEBUG) {
     output = merge(output, test_y, by="id")
 
     # From https://www.geeksforgeeks.org/how-to-calculate-auc-area-under-curve-in-r/#
-    roc_curve = roc(output$sentiment, output$pred)
+    roc_curve = roc(output$sentiment, output$prob)
     auc_scores[split_num] = pROC::auc(roc_curve)
     end_time = Sys.time()
     print(paste("Score: ", auc_scores[split_num], "Time: ", end_time - start_time))
@@ -98,19 +98,7 @@ if(DEBUG) {
   prediction = predict(model, s = model$lambda.min, newx = dtm_test, type = 'response')
   
   # Gather the output dataframe with ID and numeric prediction
-  output = data.frame(id = test$id, pred = as.numeric(paste(unlist(prediction))))
+  output = data.frame(id = test$id, prob = as.numeric(paste(unlist(prediction))))
   write.table(output, file = 'mysubmission.txt')
-  
-  # evaluate the area under curve
-  test_y = read.table('test_y.tsv', header = TRUE)
-  
-  # append the test_y points to the output
-  output = merge(output, test_y, by="id")
-  
-  # From https://www.geeksforgeeks.org/how-to-calculate-auc-area-under-curve-in-r/#
-  roc_curve = roc(output$sentiment, output$pred)
-  auc_score = pROC::auc(roc_curve)
-  end_time = Sys.time()
-  print(paste("Score: ", auc_score, "Time: ", end_time - start_time))
 }
 

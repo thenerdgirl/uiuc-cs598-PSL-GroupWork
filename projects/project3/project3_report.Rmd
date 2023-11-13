@@ -1,0 +1,44 @@
+---
+title: 'Project 1: Predict the Housing Prices in Ames'
+author: "Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May - jemay3"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  pdf_document: null
+  html_document:
+    df_print: paged
+subtitle: 'CS598: Practical Statistical Learning'
+urlcolor: cyan
+header-includes:
+- \setlength{\parindent}{2em}
+- \setlength{\parskip}{0em}
+---
+
+# Assignment Data
+
+Program: MCS-DS
+Assignment post: [campuswire](https://campuswire.com/c/G06C55090/feed/193)
+
+
+Team contributions:
+
+| Person         | Contribution                                |
+|----------------|---------------------------------------------|
+| Naomi Bhagat   |  |
+| Michael Miller |  |
+| Joe May        |  |
+
+## Overview
+
+## Section 1: Technical Details
+
+## Section 2: Performance Metrics
+
+The computer system this was run on was a Dell XPS 13, 1.30 GHz with 16.00 GB of installed RAM for all 5 splits. Below is a summary of the split #, the AUC measure, and the time it took to train and evaluate each split:
+
+| Split	| AUC | Time (s) | 
+|-------|-----|----------|
+| 1	| 0.963809603950088 | 41.8262131214142 |
+| 2	| 0.965052115788606 | 43.2450971603394 |
+| 3	| 0.964207026213195 | 43.7816581726074 |
+| 4	| 0.964579183730678 | 43.7156648635864 |
+| 5	| 0.963939226653712 | 61.08417141834895 |
