@@ -19,9 +19,9 @@ Team contributions:
 
 | Person         | Contribution |
 |----------      |----------|
-| Naomi Bhagat   | Part 1 |
-| Michael Miller | Part 2 & 3|
-| Joe May        | Part 3/Quality Assurance  |
+| Naomi Bhagat   | Evaluation |
+| Michael Miller | Pegasos implementation |
+| Joe May        | Fine tuning |
 
 Assignment URL: [campuswire post](https://campuswire.com/c/G06C55090/feed/602)
 
