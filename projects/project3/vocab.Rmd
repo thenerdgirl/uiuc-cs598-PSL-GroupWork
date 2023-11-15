@@ -76,15 +76,13 @@ dtm_train = create_dtm(it_train, vocab_vectorizer(tmp.vocab))
 
 Next, we use Lasso regression with Logistic Regression to train a model, using the document term matrix as the x value, the training sentiment values as y, and the binomial family type.
 
-Note here that the team had some confusion about how to trainthis model before understanding that Logistic Regression was required; to help explain the difference between this and Cross-Validation, we used the following StackOverflow post: https://stackoverflow.com/questions/29311323/difference-between-glmnet-and-cv-glmnet-in-r.
+Note here that the team had some confusion about how to train this model before understanding that Logistic Regression was required; to help explain the difference between this and Cross-Validation, we used the following StackOverflow post: https://stackoverflow.com/questions/29311323/difference-between-glmnet-and-cv-glmnet-in-r.
 
 ```{r step5, eval = TRUE}
 model = glmnet(x = dtm_train, y = train$sentiment, alpha = 1, family="binomial")
 ```
 
-Now, we have to go through the coefficients of the model to determine which vocabulary terms from the document matrix to use. First, we select all the columns with a non-zero beta, and then we can choose the beta that is the highest while staying under the pre-determined vocabulary size (in this case, 1000). This chosen column is then used to create the final vocabulary. 
-
-For this step in particular, the team received hints from a former student for how best to trim down the vocabulary size. 
+The final vocabulary generation step is also taken from the professor's Campuswire post (https://campuswire.com/c/G06C55090/feed/626). We must iterate through the coefficients of the model to determine which vocabulary terms from the document matrix to use. First, select all the model columns with a non-zero beta value (df), and then pick the largest df among those less then he pre-determined vocabulary size (in this case, 1000). This chosen column is then used to create the final vocabulary.
 
 ```{r step6, eval = TRUE}
 nonzero_beta = colSums(model$beta != 0)
