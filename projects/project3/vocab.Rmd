@@ -31,7 +31,7 @@ for (package in packages) {
 set.seed(235)
 ```
 
-Next, we initialize some variables, specifically the stop words for vacb generation and the vocabulary size. We choose the same stop words as the professor provides on Campuswire (https://campuswire.com/c/G06C55090/feed/626), and select a vocabulary size that is small enough to be interpretable.
+Next, we initialize some variables, specifically the stop words for vocab generation and the vocabulary size. We choose the same stop words as the professor provides on Campuswire (https://campuswire.com/c/G06C55090/feed/626), and select a vocabulary size that is small enough to be interpretable.
 
 ```{r step2, eval = TRUE}
 # set the stop words
@@ -43,7 +43,7 @@ stop_words = c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you
 vocab_size = 1000
 ```
 
-Now, gather all the training data. In order to avoid repeating the same steps over and over again for each split, we append all the training data together into one table, and use this as the collective training data. We had the option to use test data, but did not choose this route, because in a real-wprld scenario, there is no test data to access in the training stage.
+Now, gather all the training data. In order to avoid repeating the same steps over and over again for each split, we append all the training data together into one table, and use this as the collective training data. We had the option to use test data, but did not choose this route, because in a real-world scenario, there is no test data to access in the training stage.
 
 ```{r step3, eval = TRUE}
 train = read.table("split_1/train.tsv", stringsAsFactors = FALSE, header = TRUE)
