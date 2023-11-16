@@ -23,9 +23,9 @@ Team contributions:
 
 | Person         | Contribution                                |
 |----------------|---------------------------------------------|
-| Naomi Bhagat   |  |
-| Michael Miller |  |
-| Joe May        |  |
+| Naomi Bhagat   | myvocab.txt/Vocab Generation                |
+| Michael Miller | mymain.R/Coding                             |
+| Joe May        | Report/Writing                              |
 
 ## Overview
 
