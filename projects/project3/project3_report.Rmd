@@ -1,5 +1,5 @@
 ---
-title: 'Project 1: Predict the Housing Prices in Ames'
+title: 'Project 3: Movie Review Sentiment Analysis'
 author: "Naomi Bhagat - nbhagat3, Michael Miller - msmille3, Joe May - jemay3"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
@@ -16,7 +16,7 @@ header-includes:
 # Assignment Data
 
 Program: MCS-DS
-Assignment post: [campuswire](https://campuswire.com/c/G06C55090/feed/193)
+Assignment post: [campuswire](https://campuswire.com/c/G06C55090/feed/601)
 
 
 Team contributions:
@@ -45,7 +45,7 @@ Model Implementation:
     We employed Lasso regression via the cv.glmnet function from the 'glmnet' package for binary classification.
     Model training was performed on the training data with the 'binomial' family and evaluated based on the AUC (Area Under Curve) metric.
     
-## Section 2: Performance Metrics
+## Section 2: Evaluation Metrics
 
 The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00 GB of installed RAM for all 5 splits. Below is a summary of the split #, the AUC score, and the time (in seconds) it took to train and evaluate each split:
 
