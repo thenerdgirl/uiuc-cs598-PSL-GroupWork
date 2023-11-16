@@ -33,6 +33,10 @@ Team contributions:
 
 Data Pre-processing:
 
+We install the text2vec, glmnet, and pROC packages, unless they're already installed, in which case we call them.
+
+Next we establish if the code is set in debugging mode, the seed, read the vocab file 'myvocab.txt', and a place holder for the auc scores.
+
     The project involves sentiment analysis on text data.
     We utilized a custom vocabulary loaded from the 'myvocab.txt' file.
     The data underwent pre-processing steps:
@@ -52,10 +56,10 @@ The computer system this was run on was a Dell Inspiron 3501, 1.00 GHz with 8.00
         
 | Split	| AUC               | Time (s)          | 
 |-------|-------------------|-------------------|
-| 1	    | 0.963776221394338 | 1.03052536646525  |
-| 2	    | 0.965039763558083 | 47.3239099979401  |
-| 3	    | 0.964184894992799 | 47.1568410396576  |
-| 4	    | 0.964579657330981 | 46.7562909126282  |
-| 5	    | 0.963907409789814 | 45.6936190128326  |
+| 1	    | 0.963809603950088 | 49.0957510471344  |
+| 2	    | 0.965047149295919 | 56.2572309970856  |
+| 3	    | 0.964181995790127 | 55.4403550624847  |
+| 4	    | 0.964553103713986 | 54.370808839798   |
+| 5	    | 0.963925343978638 | 59.7864871025085  |
 
 

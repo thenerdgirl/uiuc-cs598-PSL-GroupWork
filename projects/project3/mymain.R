@@ -19,7 +19,7 @@ for (package in packages) {
 
 DEBUG = TRUE
 
-set.seed(235)
+set.seed(5245)
 
 # read the vocab file
 vocab = scan(file = "myvocab.txt", what = character())
