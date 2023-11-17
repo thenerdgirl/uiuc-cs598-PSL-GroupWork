@@ -17,7 +17,7 @@ for (package in packages) {
   library(package, character.only=TRUE)
 }
 
-DEBUG = TRUE
+DEBUG = FALSE
 
 set.seed(5245)
 
@@ -99,6 +99,6 @@ if(DEBUG) {
   
   # Gather the output dataframe with ID and numeric prediction
   output = data.frame(id = test$id, prob = as.numeric(paste(unlist(prediction))))
-  write.table(output, file = 'mysubmission.txt')
+  write.csv(output, file = 'mysubmission.csv', row.names = FALSE)
 }
 
