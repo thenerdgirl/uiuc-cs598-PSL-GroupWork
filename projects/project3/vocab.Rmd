@@ -3,7 +3,7 @@ title: "Project 3 - Vocab Generation"
 subtitle: "CS598: Practical Statistical Learning"
 author: 
  - name: Naomi Bhagat - nbhagat3
- - name: Michael Miller - msmill3
+ - name: Michael Miller - msmille3
  - name: Joe May - jemay3
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
