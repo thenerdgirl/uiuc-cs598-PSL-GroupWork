@@ -45,6 +45,29 @@ set.seed(235)
 
 # System I: Recommendation Based on Genres
 
+We propose the following genre-based recommendation system. A human-readable description of the system is provided first, with implementation in r below. This section of the report generates a csv file that will be used directly by the application to make recommendation.
+
+
+## Considerations
+Goals 
+Show users movies that are good
+Get more reviews 
+
+
+1. Recommend 'good' movies. Define good 
+
+2. Add in some highly rated by not very well reviewed movies
+
+3. Add in a small number of not very well reviewed movies 
+
+
+## Limitations
+Algorithm implemented without feedback
+Algorithm is static
+
+In real world setting, would try to get additional reviews from users. Would recalculate recommendations each time so that users see new recommendations. A good strategy might be: once a user 'selects' a movie, to replace it with a new recommendation, or provide some kind of shuffle button for the user to reset recommendations. 
+
+# Implementation 
 ```{r system1, eval = TRUE}
 ```
 
