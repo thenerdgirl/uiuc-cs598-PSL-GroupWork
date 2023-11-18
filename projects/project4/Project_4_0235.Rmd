@@ -1,0 +1,55 @@
+---
+title: "Project 4: Movie Recommender System"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Application |
+| Michael Miller | System 1 |
+| Joe May        | System 2  |
+
+Assignment URL: [campuswire post](https://liangfgithub.github.io/Proj/F23_Proj4.html)
+
+```{r setup, eval = TRUE}
+# add required packages
+packages = c('')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(235)
+
+```
+
+
+# System I: Recommendation Based on Genres
+
+```{r system1, eval = TRUE}
+```
+
+# System II: Recommendation Based on IBCF
+
+```{r system2, eval = TRUE}
+```
+
