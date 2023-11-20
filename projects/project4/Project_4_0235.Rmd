@@ -95,9 +95,9 @@ This category is defined as movies with the largest total number of 5-star revie
 Here, we consider the average review score of movies. This means that the age of a movie does not necessarily give it an advantage. To avoid edge cases where only a few reviewers may bias scores, we filter out movies with under 100 reviews. These are well-liked movies that the user may enjoy. 
 
 ### Hidden Gems
-Finally, we consider movies with the highest average rating, but with only between 5 and 100 reviews. With so few reviews, these movies are vulnerable to being biased by only a few reviewers. We choose to include a small nubmer of these movies because:  
-1. It may expose the user to good movies that are not well known.  
-2. By giving these movies more exposure, they will ultimately receive more reviews and improve the overall quality of our application's recommendations.  
+Finally, we consider movies with the highest average rating, but with only between 5 and 100 reviews. With so few reviews, these movies are vulnerable to being biased by only a few reviewers. We choose to include a small number of these movies because:  
+  1. It may expose the user to good movies that are not well known.  
+  2. By giving these movies more exposure, they will ultimately receive more reviews and improve the overall quality of our application's recommendations.  
 
 ## Limitations
 This algorithm is implemented with a fixed set of reviews. Ideally, in a real world setting we would randomize the suggestions for each user (or possibly for each visit to the application). In addition, we would periodically regenerate the overall list of recommendations to account for new reviews coming in from users. Finally, it would be useful to track a user's selections. For example, if a user selects a movie from the recommendation, we could replace it with a new recommendation. 
