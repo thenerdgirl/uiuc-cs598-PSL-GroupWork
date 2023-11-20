@@ -1,0 +1,97 @@
+---
+title: "Project 3 - Vocab Generation"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+First, install some packages to help us out with the vocab generation. We can also set the seed here for model creation.
+
+```{r step1, eval = TRUE}
+# packages to load
+packages = c('text2vec', 'glmnet')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(235)
+```
+
+Next, we initialize some variables, specifically the stop words for vocab generation and the vocabulary size. We choose the same stop words as the professor provides on Campuswire (https://campuswire.com/c/G06C55090/feed/626), and select a vocabulary size that is small enough to be interpretable.
+
+```{r step2, eval = TRUE}
+# set the stop words
+stop_words = c("i", "me", "my", "myself", "we", "our", "ours", "ourselves", "you", "your", "yours", "their", "they", 
+               "his", "her", "she", "he", "a", "an", "and", "is", "was", "are", "were", "him", "himself", "has", "have",
+               "it", "its", "the", "us")
+
+# top points vocab size
+vocab_size = 1000
+```
+
+Now, gather all the training data. In order to avoid repeating the same steps over and over again for each split, we append all the training data together into one table, and use this as the collective training data. We had the option to use test data, but did not choose this route, because in a real-world scenario, there is no test data to access in the training stage.
+
+```{r step3, eval = TRUE}
+train = read.table("split_1/train.tsv", stringsAsFactors = FALSE, header = TRUE)
+
+for (split_num in 2:5) {
+  split_dir =  paste0('split_', as.character(split_num))
+  temp_train = read.table(paste0(split_dir, '/train.tsv'), stringsAsFactors = FALSE, header = TRUE)
+  train = rbind(train, temp_train)
+}
+```
+
+This next chunk is taken entirely from the professor's Campuswire post (https://campuswire.com/c/G06C55090/feed/626). Here, we clean the HTML tags from the training data, then use the text2vec package to construct the document term matrix, maximum 4-grams. 
+
+```{r step4, eval = TRUE}
+# clear out the html tags in the review
+train$review = gsub('<.*?>', ' ', train$review)
+
+# create an iterator over tokens
+it_train = itoken(train$review, preprocessor = tolower, tokenizer = word_tokenizer)
+
+# build the vocabulary
+tmp.vocab = create_vocabulary(it_train, stopwords = stop_words, ngram = c(1L,4L))
+
+# prune the vocabulary
+tmp.vocab = prune_vocabulary(tmp.vocab, term_count_min = 10, doc_proportion_max = 0.5, doc_proportion_min = 0.001)
+
+# construct a document-term matrix
+dtm_train = create_dtm(it_train, vocab_vectorizer(tmp.vocab))
+```
+
+Next, we use Lasso regression with Logistic Regression to train a model, using the document term matrix as the x value, the training sentiment values as y, and the binomial family type.
+
+Note here that the team had some confusion about how to train this model before understanding that Logistic Regression was required; to help explain the difference between this and Cross-Validation, we used the following StackOverflow post: https://stackoverflow.com/questions/29311323/difference-between-glmnet-and-cv-glmnet-in-r.
+
+```{r step5, eval = TRUE}
+model = glmnet(x = dtm_train, y = train$sentiment, alpha = 1, family="binomial")
+```
+
+The final vocabulary generation step is also taken from the professor's Campuswire post (https://campuswire.com/c/G06C55090/feed/626). We must iterate through the coefficients of the model to determine which vocabulary terms from the document matrix to use. First, select all the model columns with a non-zero beta value (df), and then pick the largest df among those less then he pre-determined vocabulary size (in this case, 1000). This chosen column is then used to create the final vocabulary.
+
+```{r step6, eval = TRUE}
+nonzero_beta = colSums(model$beta != 0)
+best_col_index = unname(which.max(which(nonzero_beta < vocab_size)))
+vocabulary = colnames(dtm_train)[which(model$beta[, best_col_index] != 0)]
+```
+
+Finally, we write the vocabulary to the output file.
+
+```{r step7, eval = TRUE}
+write.table(vocabulary, file = "myvocab.txt", row.names = FALSE, col.names = FALSE, sep = "", quote = FALSE)
+```
