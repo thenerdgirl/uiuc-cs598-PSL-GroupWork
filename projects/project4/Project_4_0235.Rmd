@@ -103,6 +103,16 @@ In real world setting, would try to get additional reviews from users. Would rec
 
 # Implementation 
 ```{r ingest_data, eval = TRUE}
+# define the mixture of movies we're going to take
+n_all_time_fav = 50
+n_most_popular = 40
+n_hidden = 10
+n_total_recs = 10
+
+# define params for establishing popular movies vs hidden gems
+min_reviews_popular = 100
+min_reviews_hidden = 5
+
 # first, unpack and duplicate genres so that each movie-genre combo is one row
 movie_genres = movies %>% 
   mutate(Genres = strsplit(Genres, '\\|')) %>%
@@ -117,15 +127,61 @@ perfect_reviews = ratings %>%
   group_by(MovieID) %>%
   summarize(PerfectReviews = n())
 
-# join perfect reviews with movie genres, take the top 100 per genre
-all_time_popular = movie_genres %>%
-  inner_join()
+# get average review for popular movies
+review_percent_popular = ratings %>%
+  group_by(MovieID) %>%
+  filter(n() >= min_reviews_popular) %>%
+  summarize(AvgRating = mean(Rating))
+  
+# get average reviewfor rising movies 
+review_percent_hidden = ratings %>%
+  group_by(MovieID) %>%
+  filter(n() >= min_reviews_hidden) %>%
+  filter(n() < min_reviews_popular) %>%
+  summarize(AvgRating = mean(Rating))
 
+# join perfect reviews with movie genres, take top n to get all time favorite movies
+all_time_favorites = movie_genres %>%
+  inner_join(perfect_reviews, by="MovieID") %>%
+  arrange(desc(PerfectReviews)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_all_time_fav)
 
+all_time_favorites['Rationale'] = 'All time favorite'
 
+out = all_time_favorites[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')]
 
+# join average review with movie genres, take top n to get popular movies
+# note we are excluding any movie that might already be all time favorites
+popular = movie_genres %>%
+  anti_join(out, by="MovieID") %>%
+  inner_join(review_percent_popular, by="MovieID") %>%
+  arrange(desc(AvgRating)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_most_popular)
+popular['Rationale'] = 'Popular'
 
+out = bind_rows(out, popular[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
 
+# join average rising reviews with movie genres, take top n to get rising movies
+# note we are exlucuding any movies already chosen
+hidden = movie_genres %>%
+  anti_join(out, by="MovieID") %>%
+  inner_join(review_percent_hidden, by="MovieID") %>%
+  arrange(desc(AvgRating)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_hidden)
+hidden['Rationale'] = 'Hidden gem'
+
+out = bind_rows(out, hidden[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
+
+# next, we randomly sample 10 films from out for each genre, and we save these for use in the app
+to_csv = out %>%
+  arrange(sample(n())) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_total_recs)
+  
+write_csv(to_csv, 'genre_recommendations.csv')
 ```
 
 # System II: Recommendation Based on IBCF
