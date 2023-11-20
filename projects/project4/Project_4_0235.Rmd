@@ -27,7 +27,7 @@ Assignment URL: [campuswire post](https://liangfgithub.github.io/Proj/F23_Proj4.
 
 ```{r setup, eval = TRUE}
 # add required packages
-packages = c('')
+packages = c('tidyverse')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
@@ -40,35 +40,6 @@ for (package in packages) {
 # set seed
 set.seed(235)
 
-```
-
-
-# System I: Recommendation Based on Genres
-
-We propose the following genre-based recommendation system. A human-readable description of the system is provided first, with implementation in r below. This section of the report generates a csv file that will be used directly by the application to make recommendation.
-
-
-## Considerations
-Goals 
-Show users movies that are good
-Get more reviews 
-
-
-1. Recommend 'good' movies. Define good 
-
-2. Add in some highly rated by not very well reviewed movies
-
-3. Add in a small number of not very well reviewed movies 
-
-
-## Limitations
-Algorithm implemented without feedback
-Algorithm is static
-
-In real world setting, would try to get additional reviews from users. Would recalculate recommendations each time so that users see new recommendations. A good strategy might be: once a user 'selects' a movie, to replace it with a new recommendation, or provide some kind of shuffle button for the user to reset recommendations. 
-
-# Implementation 
-```{r ingest_data, eval = TRUE}
 # download and preprocses raw movie data
 # note that this code is from example code from this class 
 # https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html
@@ -102,6 +73,58 @@ users = read.csv(paste0(source_url, 'users.dat?raw=true'),
                  sep = ':', header = FALSE)
 users = users[, -c(2,4,6,8)] # skip columns
 colnames(users) = c('UserID', 'Gender', 'Age', 'Occupation', 'Zip-code')
+```
+
+
+
+# System I: Recommendation Based on Genres
+
+We propose the following genre-based recommendation system. A human-readable description of the system is provided first, with implementation in r below. This section of the report generates a csv file that will be used directly by the application to make recommendation.
+
+
+## Considerations
+Goals 
+Show users movies that are good
+Get more reviews 
+
+
+1. Recommend 'good' movies. Define good 
+
+2. Add in some highly rated by not very well reviewed movies
+
+3. Add in a small number of not very well reviewed movies 
+
+
+## Limitations
+Algorithm implemented without feedback
+Algorithm is static
+
+In real world setting, would try to get additional reviews from users. Would recalculate recommendations each time so that users see new recommendations. A good strategy might be: once a user 'selects' a movie, to replace it with a new recommendation, or provide some kind of shuffle button for the user to reset recommendations. 
+
+# Implementation 
+```{r ingest_data, eval = TRUE}
+# first, unpack and duplicate genres so that each movie-genre combo is one row
+movie_genres = movies %>% 
+  mutate(Genres = strsplit(Genres, '\\|')) %>%
+  rename(Genre = Genres) %>%
+  unnest(Genre)
+
+genres = unique(movie_genres$Genre)
+
+# get total 5 star review counts
+perfect_reviews = ratings %>%
+  filter(Rating == 5) %>%
+  group_by(MovieID) %>%
+  summarize(PerfectReviews = n())
+
+# join perfect reviews with movie genres, take the top 100 per genre
+all_time_popular = movie_genres %>%
+  inner_join()
+
+
+
+
+
 
 ```
 
