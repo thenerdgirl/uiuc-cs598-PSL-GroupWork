@@ -25,7 +25,9 @@ Team contributions:
 
 Assignment URL: [campuswire post](https://liangfgithub.github.io/Proj/F23_Proj4.html)
 
-```{r setup, eval = TRUE}
+# Setup
+Install packages and set random seed.
+```{r setup, eval=TRUE, warning=FALSE, message=FALSE}
 # add required packages
 packages = c('tidyverse')
 
@@ -39,7 +41,10 @@ for (package in packages) {
 
 # set seed
 set.seed(235)
+```
 
+Download and preprocess data. 
+```{r preprocess, eval = TRUE}
 # download and preprocses raw movie data
 # note that this code is from example code from this class 
 # https://liangfgithub.github.io/Rcode_W13_Movie_EDA.nb.html
@@ -75,37 +80,33 @@ users = users[, -c(2,4,6,8)] # skip columns
 colnames(users) = c('UserID', 'Gender', 'Age', 'Occupation', 'Zip-code')
 ```
 
-
-
 # System I: Recommendation Based on Genres
 
-We propose the following genre-based recommendation system. A human-readable description of the system is provided first, with implementation in r below. This section of the report generates a csv file that will be used directly by the application to make recommendation.
+We propose the following genre-based recommendation system. A description of the system is provided first, with implementation in `R` below. This section of the report generates a .csv file that will be used directly by the application to make recommendations.
 
+## Description
 
-## Considerations
-Goals 
-Show users movies that are good
-Get more reviews 
+In order to provide a variety of recommendations, we suggest movies from three separate categories. The implementation below generates parameterized number of recommendations from each category, then randomly samples the set for the final recommendations. 
 
+### All Time Favorites
+This category is defined as movies with the largest total number of 5-star reviews. In theory, these movies have been enjoyed by the largest number of people. It is worth noting that this category inherently favors older movies, as they have had more time to accumulate reviews. In addition, this category does not take into account any negative reviews, so theoretically a movie with a large number of both positive and negative reviews could still make this category. Regardless, these movies should be highly significant for the chosen genre.  
 
-1. Recommend 'good' movies. Define good 
+### Popular Movies
+Here, we consider the average review score of movies. This means that the age of a movie does not necessarily give it an advantage. To avoid edge cases where only a few reviewers may bias scores, we filter out movies with under 100 reviews. These are well-liked movies that the user may enjoy. 
 
-2. Add in some highly rated by not very well reviewed movies
-
-3. Add in a small number of not very well reviewed movies 
-
+### Hidden Gems
+Finally, we consider movies with the highest average rating, but with only between 5 and 100 reviews. With so few reviews, these movies are vulnerable to being biased by only a few reviewers. We choose to include a small nubmer of these movies because:  
+1. It may expose the user to good movies that are not well known.  
+2. By giving these movies more exposure, they will ultimately receive more reviews and improve the overall quality of our application's recommendations.  
 
 ## Limitations
-Algorithm implemented without feedback
-Algorithm is static
-
-In real world setting, would try to get additional reviews from users. Would recalculate recommendations each time so that users see new recommendations. A good strategy might be: once a user 'selects' a movie, to replace it with a new recommendation, or provide some kind of shuffle button for the user to reset recommendations. 
+This algorithm is implemented with a fixed set of reviews. Ideally, in a real world setting we would randomize the suggestions for each user (or possibly for each visit to the application). In addition, we would periodically regenerate the overall list of recommendations to account for new reviews coming in from users. Finally, it would be useful to track a user's selections. For example, if a user selects a movie from the recommendation, we could replace it with a new recommendation. 
 
 # Implementation 
-```{r ingest_data, eval = TRUE}
-# define the mixture of movies we're going to take
+```{r system1, eval = TRUE}
+# define the quantity of movies for each genre for each type 
 n_all_time_fav = 50
-n_most_popular = 40
+n_popular = 40
 n_hidden = 10
 n_total_recs = 10
 
@@ -119,9 +120,7 @@ movie_genres = movies %>%
   rename(Genre = Genres) %>%
   unnest(Genre)
 
-genres = unique(movie_genres$Genre)
-
-# get total 5 star review counts
+# get number of 5 star reviews for calculating all time favorites
 perfect_reviews = ratings %>%
   filter(Rating == 5) %>%
   group_by(MovieID) %>%
@@ -133,14 +132,14 @@ review_percent_popular = ratings %>%
   filter(n() >= min_reviews_popular) %>%
   summarize(AvgRating = mean(Rating))
   
-# get average reviewfor rising movies 
+# get average review for hidden gems
 review_percent_hidden = ratings %>%
   group_by(MovieID) %>%
   filter(n() >= min_reviews_hidden) %>%
   filter(n() < min_reviews_popular) %>%
   summarize(AvgRating = mean(Rating))
 
-# join perfect reviews with movie genres, take top n to get all time favorite movies
+# join perfect reviews with movie genres, take top n to get all time favorites
 all_time_favorites = movie_genres %>%
   inner_join(perfect_reviews, by="MovieID") %>%
   arrange(desc(PerfectReviews)) %>%
@@ -149,6 +148,7 @@ all_time_favorites = movie_genres %>%
 
 all_time_favorites['Rationale'] = 'All time favorite'
 
+# we will track our final set of movies as out
 out = all_time_favorites[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')]
 
 # join average review with movie genres, take top n to get popular movies
@@ -158,13 +158,13 @@ popular = movie_genres %>%
   inner_join(review_percent_popular, by="MovieID") %>%
   arrange(desc(AvgRating)) %>%
   group_by(Genre) %>%
-  slice_head(n=n_most_popular)
+  slice_head(n=n_popular)
 popular['Rationale'] = 'Popular'
 
 out = bind_rows(out, popular[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
 
-# join average rising reviews with movie genres, take top n to get rising movies
-# note we are exlucuding any movies already chosen
+# join average hidden gem reviews with movie genres, take top n to get hiden gems
+# note we are excluding any movies already chosen
 hidden = movie_genres %>%
   anti_join(out, by="MovieID") %>%
   inner_join(review_percent_hidden, by="MovieID") %>%
@@ -175,7 +175,7 @@ hidden['Rationale'] = 'Hidden gem'
 
 out = bind_rows(out, hidden[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
 
-# next, we randomly sample 10 films from out for each genre, and we save these for use in the app
+# next, we randomly sample n_total_rec films from out for each genre, and we save these for use in the app
 to_csv = out %>%
   arrange(sample(n())) %>%
   group_by(Genre) %>%
@@ -183,6 +183,30 @@ to_csv = out %>%
   
 write_csv(to_csv, 'genre_recommendations.csv')
 ```
+
+# Sample Code (MOVE ME TO APPLICATION)
+```{r system1_sample_app_usage, eval = TRUE}
+
+get_genre_recommendations = function(movies, genre) {
+  # given a movies dataframe (in format generated by section above)
+  # and a genre string, return recommendations as a tibble 
+  # requires tidyverse
+  return(movies %>% filter(Genre == genre))
+}
+
+suppressMessages({
+  rec_tibble = read_csv('genre_recommendations.csv')
+})
+
+genres = unique(rec_tibble$Genre)
+genre = genres[11]
+
+recs = get_genre_recommendations(rec_tibble, genre)
+
+cat('Recommendation for:', genre, '\n')
+print(recs)
+```
+
 
 # System II: Recommendation Based on IBCF
 
