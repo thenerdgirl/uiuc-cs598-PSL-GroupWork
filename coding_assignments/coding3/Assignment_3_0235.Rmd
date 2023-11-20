@@ -163,6 +163,10 @@ lines(fx, predict(gcv_f, data.frame(x = fx)), lty=2, col="blue")
 ## Preparation
 
 ```{r part2-0, eval = TRUE}
+
+# set seed
+set.seed(235)
+
 sales_df = read.csv('Sales_Transactions_Dataset_Weekly.csv')
 
 # Per https://campuswire.com/c/G06C55090/feed/346, only keep W columns
@@ -289,6 +293,9 @@ mtext('Custered Timeserires Data with Mean Centers (X)', side=3, line=1, outer=T
 ## Part 3-1: Ridgeless Function
 
 ```{r part3-1, eval = TRUE}
+
+# set seed
+set.seed(235)
 
 # from assignment, recommended threshold for excluding eigen values
 eps = 1e-10
