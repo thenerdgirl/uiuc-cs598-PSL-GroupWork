@@ -1,8 +1,7 @@
 ## server.R
 
 # load functions
-source('functions/cf_algorithm.R') # collaborative filtering
-source('functions/similarity_measures.R') # similarity measures
+library(dplyr)
 
 # define functions
 get_user_ratings <- function(value_list) {
@@ -22,16 +21,28 @@ get_user_ratings <- function(value_list) {
 }
 
 # read in data
-books <- fread('data/books.csv')
-ratings <- fread('data/ratings_cleaned.csv')
+myurl = "https://liangfgithub.github.io/MovieData/"
+movies = readLines(paste0(myurl, 'movies.dat?raw=true'))
+movies = strsplit(movies, split = "::", fixed = TRUE, useBytes = TRUE)
+movies = matrix(unlist(movies), ncol = 3, byrow = TRUE)
+movies = data.frame(movies, stringsAsFactors = FALSE)
+colnames(movies) = c('MovieID', 'Title', 'Genres')
+movies$MovieID = as.integer(movies$MovieID)
+movies$Title = iconv(movies$Title, "latin1", "UTF-8")
 
-# reshape to books x user matrix 
-ratingmat <- sparseMatrix(ratings$book_id, ratings$user_id, x=ratings$rating) # book x user matrix
-ratingmat <- ratingmat[, unique(summary(ratingmat)$j)] # remove users with no ratings
-dimnames(ratingmat) <- list(book_id = as.character(1:10000), user_id = as.character(sort(unique(ratings$user_id))))
+small_image_url = "https://liangfgithub.github.io/MovieImages/"
+movies$image_url = sapply(movies$MovieID, 
+                          function(x) paste0(small_image_url, x, '.jpg?raw=true'))
+
+# some pre-processing
+genre_list = unique(unlist(strsplit(movies$Genres,"\\|")))
 
 shinyServer(function(input, output, session) {
-  
+  # dynamically update the genre dropdown menu in the UI
+  observe({
+    updateSelectInput(session, "genre_dropdown", choices = unique(observed_genres), label = "Select a genre:")
+  })
+
   # show the books to be rated
   output$ratings <- renderUI({
     num_rows <- 20
@@ -48,37 +59,22 @@ shinyServer(function(input, output, session) {
     })
   })
   
+  ###############################################################################################################
+  #                                      Genre recommendations and results                                      #
+  ###############################################################################################################
+
   # Calculate recommendations when the sbumbutton is clicked
-  df <- eventReactive(input$btn, {
-    withBusyIndicatorServer("btn", { # showing the busy indicator
+  genre_df <- eventReactive(input$genreBtn, {
+    withBusyIndicatorServer("genreBtn", { # showing the busy indicator
         # hide the rating container
         useShinyjs()
         jsCode <- "document.querySelector('[data-widget=collapse]').click();"
         runjs(jsCode)
         
-        # get the user's rating data
-        value_list <- reactiveValuesToList(input)
-        user_ratings <- get_user_ratings(value_list)
-        
-        # add user's ratings as first column to rating matrix
-        rmat <- cbind(user_ratings, ratingmat)
-        
-        # get the indices of which cells in the matrix should be predicted
-        # predict all books the current user has not yet rated
-        items_to_predict <- which(rmat[, 1] == 0)
-        prediction_indices <- as.matrix(expand.grid(items_to_predict, 1))
-        
-        # run the ubcf-alogrithm
-        res <- predict_cf(rmat, prediction_indices, "ubcf", TRUE, cal_cos, 1000, FALSE, 2000, 1000)
-        
-        # sort, organize, and return the results
-        user_results <- sort(res[, 1], decreasing = TRUE)[1:20]
-        user_predicted_ids <- as.numeric(names(user_results))
-        recom_results <- data.table(Rank = 1:20, 
-                                    Book_id = user_predicted_ids, 
-                                    Author = books$authors[user_predicted_ids], 
-                                    Title = books$title[user_predicted_ids], 
-                                    Predicted_rating =  user_results)
+        # TODO: add genre recommendation code here, return a list of the top rated movies by genre
+        recommendations = list()
+
+        return(recommendations)
         
     }) # still busy
     
@@ -86,31 +82,30 @@ shinyServer(function(input, output, session) {
   
 
   # display the recommendations
-  output$results <- renderUI({
-    num_rows <- 4
-    num_books <- 5
-    recom_result <- df()
-    
+  output$genreResults <- renderUI({
+    # top 10 recommendations
+    num_rows <- 2
+    num_movies <- 5
+    recommendations <- genre_df()
+
     lapply(1:num_rows, function(i) {
-      list(fluidRow(lapply(1:num_books, function(j) {
-        box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_books + j),
+      list(fluidRow(lapply(1:num_movies, function(j) {
+        box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
+            div(style = "text-align:center", 
+                a(img(src = movies$image_url[recommendations$MovieID[(i - 1) * num_movies + j]], height = 150))
+            ),
+            div(style="text-align:center; font-size: 100%", 
+                strong(movies$Title[recommendations$MovieID[(i - 1) * num_movies + j]])
+            )
             
-          div(style = "text-align:center", 
-              a(href = paste0('https://www.goodreads.com/book/show/', books$best_book_id[recom_result$Book_id[(i - 1) * num_books + j]]), 
-                target='blank', 
-                img(src = books$image_url[recom_result$Book_id[(i - 1) * num_books + j]], height = 150))
-             ),
-          div(style = "text-align:center; color: #999999; font-size: 80%", 
-              books$authors[recom_result$Book_id[(i - 1) * num_books + j]]
-             ),
-          div(style="text-align:center; font-size: 100%", 
-              strong(books$title[recom_result$Book_id[(i - 1) * num_books + j]])
-             )
-          
         )        
       }))) # columns
     }) # rows
     
   }) # renderUI function
+
+  ###############################################################################################################
+  #                                     Rating recommendations and results                                      #
+  ###############################################################################################################
   
 }) # server function
