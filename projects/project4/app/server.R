@@ -22,6 +22,8 @@ get_user_ratings <- function(value_list) {
 
 # read in data
 myurl = "https://liangfgithub.github.io/MovieData/"
+
+# movie data
 movies = readLines(paste0(myurl, 'movies.dat?raw=true'))
 movies = strsplit(movies, split = "::", fixed = TRUE, useBytes = TRUE)
 movies = matrix(unlist(movies), ncol = 3, byrow = TRUE)
@@ -29,32 +31,50 @@ movies = data.frame(movies, stringsAsFactors = FALSE)
 colnames(movies) = c('MovieID', 'Title', 'Genres')
 movies$MovieID = as.integer(movies$MovieID)
 movies$Title = iconv(movies$Title, "latin1", "UTF-8")
+# extract year
+movies$Year = as.numeric(unlist(lapply(movies$Title, function(x) substr(x, nchar(x)-4, nchar(x)-1))))
 
 small_image_url = "https://liangfgithub.github.io/MovieImages/"
 movies$image_url = sapply(movies$MovieID, 
                           function(x) paste0(small_image_url, x, '.jpg?raw=true'))
 
-# some pre-processing
-genre_list = unique(unlist(strsplit(movies$Genres,"\\|")))
+# ratings data
+ratings = read.csv(paste0(myurl, 'ratings.dat?raw=true'), sep = ':', colClasses = c('integer', 'NULL'), header = FALSE)
+colnames(ratings) = c('UserID', 'MovieID', 'Rating', 'Timestamp')
+
+# user data
+users = read.csv(paste0(myurl, 'users.dat?raw=true'), sep = ':', header = FALSE)
+users = users[, -c(2,4,6,8)] # skip columns
+colnames(users) = c('UserID', 'Gender', 'Age', 'Occupation', 'Zip-code')
+
+# dynamically grab genres
+suppressMessages({
+  rec_tibble = read_csv('data/genre_recommendations.csv')
+})
+genres = unique(rec_tibble$Genre)
+
+##########
+# SERVER #
+##########
 
 shinyServer(function(input, output, session) {
   # dynamically update the genre dropdown menu in the UI
   observe({
-    updateSelectInput(session, "genre_dropdown", choices = unique(observed_genres), label = "Select a genre:")
+    updateSelectInput(session, "genre_dropdown", choices = unique(genres), label = "Select a genre:")
   })
 
-  # show the books to be rated
+  # show the movies to be rated
   output$ratings <- renderUI({
     num_rows <- 20
-    num_books <- 6 # books per row
+    num_movies <- 6 # movies per row
     
     lapply(1:num_rows, function(i) {
-      list(fluidRow(lapply(1:num_books, function(j) {
+      list(fluidRow(lapply(1:num_movies, function(j) {
         list(box(width = 2,
-                 div(style = "text-align:center", img(src = books$image_url[(i - 1) * num_books + j], style = "max-height:150")),
-                 div(style = "text-align:center; color: #999999; font-size: 80%", books$authors[(i - 1) * num_books + j]),
-                 div(style = "text-align:center", strong(books$title[(i - 1) * num_books + j])),
-                 div(style = "text-align:center; font-size: 150%; color: #f0ad4e;", ratingInput(paste0("select_", books$book_id[(i - 1) * num_books + j]), label = "", dataStop = 5)))) #00c0ef
+                 div(style = "text-align:center", img(src = books$image_url[(i - 1) * num_movies + j], style = "max-height:150")),
+                 div(style = "text-align:center; color: #999999; font-size: 80%", books$authors[(i - 1) * num_movies + j]),
+                 div(style = "text-align:center", strong(books$title[(i - 1) * num_movies + j])),
+                 div(style = "text-align:center; font-size: 150%; color: #f0ad4e;", ratingInput(paste0("select_", books$book_id[(i - 1) * num_movies + j]), label = "", dataStop = 5)))) #00c0ef
       })))
     })
   })
@@ -71,8 +91,7 @@ shinyServer(function(input, output, session) {
         jsCode <- "document.querySelector('[data-widget=collapse]').click();"
         runjs(jsCode)
         
-        # TODO: add genre recommendation code here, return a list of the top rated movies by genre
-        recommendations = list()
+        recommendations = get_genre_recommendations(rec_tibble, input$genre_dropdown)
 
         return(recommendations)
         
@@ -91,13 +110,12 @@ shinyServer(function(input, output, session) {
     lapply(1:num_rows, function(i) {
       list(fluidRow(lapply(1:num_movies, function(j) {
         box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
-            div(style = "text-align:center", 
-                a(img(src = movies$image_url[recommendations$MovieID[(i - 1) * num_movies + j]], height = 150))
-            ),
-            div(style="text-align:center; font-size: 100%", 
-                strong(movies$Title[recommendations$MovieID[(i - 1) * num_movies + j]])
-            )
-            
+          div(style = "text-align:center", 
+              a(img(src = movies$image_url[recommendations$MovieID[(i - 1) * num_movies + j]], height = 150))
+          ),
+          div(style="text-align:center; font-size: 100%", 
+              strong(movies$Title[recommendations$MovieID[(i - 1) * num_movies + j]])
+          )
         )        
       }))) # columns
     }) # rows

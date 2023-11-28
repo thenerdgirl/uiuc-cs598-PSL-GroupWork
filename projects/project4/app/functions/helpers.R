@@ -90,3 +90,8 @@ get_user_ratings = function(value_list) {
   dat[, ':=' (MovieID = as.numeric(MovieID), Rating = as.numeric(Rating))]
   dat = dat[Rating &gt; 0]
 }
+
+# Our System I implementation
+get_genre_recommendations = function(movies, genre) {
+  return(movies %>% filter(Genre == genre))
+}
