@@ -83,12 +83,12 @@ appCSS <- "
 # From professor
 get_user_ratings = function(value_list) {
   dat = data.table(MovieID = sapply(strsplit(names(value_list), "_"), 
-                                    function(x) ifelse(length(x) &gt; 1, x[[2]], NA)),
-                    Rating = unlist(as.character(value_list)))
-  dat = dat[!is.null(Rating) &amp; !is.na(MovieID)]
+                                    function(x) ifelse(length(x) > 1, x[[2]], NA)),
+                   Rating = unlist(as.character(value_list)))
+  dat = dat[!is.null(Rating) & !is.na(MovieID)]
   dat[Rating == " ", Rating := 0]
   dat[, ':=' (MovieID = as.numeric(MovieID), Rating = as.numeric(Rating))]
-  dat = dat[Rating &gt; 0]
+  dat = dat[Rating > 0]
 }
 
 # Our System I implementation

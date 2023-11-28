@@ -4,21 +4,21 @@
 library(dplyr)
 
 # define functions
-get_user_ratings <- function(value_list) {
-  dat <- data.table(book_id = sapply(strsplit(names(value_list), "_"), function(x) ifelse(length(x) > 1, x[[2]], NA)),
-                    rating = unlist(as.character(value_list)))
-  dat <- dat[!is.null(rating) & !is.na(book_id)]
-  dat[rating == " ", rating := 0]
-  dat[, ':=' (book_id = as.numeric(book_id), rating = as.numeric(rating))]
-  dat <- dat[rating > 0]
+# get_user_ratings <- function(value_list) {
+#   dat <- data.table(book_id = sapply(strsplit(names(value_list), "_"), function(x) ifelse(length(x) > 1, x[[2]], NA)),
+#                     rating = unlist(as.character(value_list)))
+#   dat <- dat[!is.null(rating) & !is.na(book_id)]
+#   dat[rating == " ", rating := 0]
+#   dat[, ':=' (book_id = as.numeric(book_id), rating = as.numeric(rating))]
+#   dat <- dat[rating > 0]
   
-  # get the indices of the ratings
-  # add the user ratings to the existing rating matrix
-  user_ratings <- sparseMatrix(i = dat$book_id, 
-                               j = rep(1,nrow(dat)), 
-                               x = dat$rating, 
-                               dims = c(nrow(ratingmat), 1))
-}
+#   # get the indices of the ratings
+#   # add the user ratings to the existing rating matrix
+#   user_ratings <- sparseMatrix(i = dat$book_id, 
+#                                j = rep(1,nrow(dat)), 
+#                                x = dat$rating, 
+#                                dims = c(nrow(ratingmat), 1))
+# }
 
 # read in data
 myurl = "https://liangfgithub.github.io/MovieData/"
