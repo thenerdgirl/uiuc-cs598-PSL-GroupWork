@@ -55,16 +55,11 @@ colnames(users) = c('UserID', 'Gender', 'Age', 'Occupation', 'Zip-code')
 
 ratings = read.csv('Rmat.csv')
 ratings
-ratings$Rating
-ratings %>%
-  filter(UserID == "1") %>%
-  summarize(x=mean(Rating))
+print(row.names(ratings))
+View(ratings)
 
-ratings[,2]
+ratings["u1",1:10]
 
-ratings %>%
-  filter(UserID == "2") %>%
-  summarize(x=mean(Rating))
 
 n_users = length(unique(ratings$UserID))
 m_movies = length(unique(ratings$MovieID))
@@ -78,10 +73,11 @@ R = ratings
 # Normalize R by taking average user ratings and subtracting from R matrix
 r_avg = rowMeans(R, na.rm = TRUE)
 R_norm = R-r_avg
+View(R_norm)
 
 # Create R vectors RIi and RIj as indexed by Iij, the set of users who rated i and j
 Ri = R_norm[,'m1']
-Rj = R_norm[,'m1510']
+Rj = R_norm[,'m10']
 ri = Ri[!is.na(Ri) & !is.na(Rj)]
 rj = Rj[!is.na(Ri) & !is.na(Rj)]
 
@@ -91,10 +87,100 @@ print(length(rj))
 Sij =.5+ .5*(sum(ri * rj)/(sqrt(sum(ri^2)) * sqrt(sum(rj^2))))
 Sij
 
+get_cosine(Ri, Rj)
 
 library(data.table)
 
 
 View(R)
 View(R_norm)
+
+# Function to implement Cosine Similarity Calculation takes vectors of same length as arguments
+get_cosine = function(Ri,Rj){
+
+  # Create index for set Iij, get cardinality of set, create subsets of Ri and Rj indexed by Iij
+  Iij = !is.na(Ri) & !is.na(Rj)
+  Iij_count = sum(Iij, na.rm=TRUE)
+  ri = Ri[Iij]
+  rj = Rj[Iij]
+  # Perform initial calculations in order to separate cases
+  RiRj = sum(ri * rj)
+  Ri2 = sqrt(sum(ri^2))
+  Rj2 = sqrt(sum(rj^2))
+
+  # Return NA, if less than three of the same people rated the same movie 
+  # if or one sum square equals zero. Otherwise, calculat cosine similarity.
+  if((Iij_count<3)|((Ri2*Rj2)==0)){
+    Sij = NA
+  } else {
+    Sij = .5+ .5*(RiRj/(Ri2 * Rj2))
+  }
+  return(Sij)
+}
+
+
+create_similarity_matrix = function(R) {
+  t0 = Sys.time()
+  m_movies = ncol(R)
+  movie_names = colnames(R)
+  S = matrix(NA, nrow = m_movies, ncol = m_movies,
+            dimnames = list(movie_names, movie_names))
+  
+  for (i in 1:m_movies) {
+  print(i)
+    for (j in 1:m_movies) {
+      if (i != j) {
+        x = get_cosine(R[, i], R[, j])
+        S[i, j] = x
+        S[j, i] = x
+      }
+    }
+    #if(i==100){ break }  
+  print(S[, i])
+  }
+  tf = Sys.time()
+  time = tf - t0
+  print(time)
+  return(S)
+}
+#x=create_similarity_matrix(R_norm[,c('m1','m10','m100')])
+#x=create_similarity_matrix(R_norm[,1:5])
+x=create_similarity_matrix(R_norm)
+print(x)
+
+x['m1','m10']
+x['m1','m100']
+x[1,2]
+
+View(S)
+
+R = R_norm[,c('m1','m10','m100')]
+cosine_similarity = function(R) {
+
+  dot_product = R %*% t(R)
+  R2 = R^2
+  magnitude = sqrt(rowSums(R2, na.rm = TRUE))
+  
+  S = dot_product / (magnitude %*% t(magnitude))
+  
+  diag(S) = NA
+  
+  S[rowSums(!is.na(R)) < 3, ] = NA
+  S[, rowSums(!is.na(R)) < 3] = NA
+  
+  return(S)
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
