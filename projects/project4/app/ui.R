@@ -33,19 +33,19 @@ shinyUI(
                   fluidRow(
                     box(width = 12, title = "Meet The Authors!", status = "info", solidHeader = TRUE, collapsible = FALSE,
                       div(class = "authors",
-                          box(width = 3, status = "success", solidHeader = TRUE, title = "Naomi Bhagat",
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Naomi Bhagat",
                             div(style = "text-align:center",
-                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                                tags$img(src = 'naomi.jpg?raw=true', height = 300)
                             )
                           ),
-                          box(width = 3, status = "success", solidHeader = TRUE, title = "Joe May",
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Joe May",
                             div(style = "text-align:center",
-                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                                tags$img(src = 'test.jpg?raw=true', height = 300)
                             )
                           ),
-                          box(width = 3, status = "success", solidHeader = TRUE, title = "Michael Miller",
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Michael Miller",
                             div(style = "text-align:center",
-                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                                tags$img(src = 'michael.jpg?raw=true', height = 300)
                             )
                           )
                       )
