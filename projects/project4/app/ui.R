@@ -31,7 +31,7 @@ shinyUI(
                     p("There are two systems available to help recommend movies. Select a System from the tabs on the left and follow the steps on each page to get your movie recommendations!")
                   ),
                   fluidRow(
-                    box(width = 12, title = "Meet The Authors!", status = "info", solidHeader = TRUE, collapsible = TRUE,
+                    box(width = 12, title = "Meet The Authors!", status = "info", solidHeader = TRUE, collapsible = FALSE,
                       div(class = "authors",
                           box(width = 3, status = "success", solidHeader = TRUE, title = "Naomi Bhagat",
                             div(style = "text-align:center",
