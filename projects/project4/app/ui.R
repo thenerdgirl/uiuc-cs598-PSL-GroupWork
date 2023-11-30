@@ -27,11 +27,37 @@ shinyUI(
                   tabName="home",
                   titlePanel("Welcome to the Movie Recommender!"),
                   mainPanel(
-                    p("There are two systems available to help recommend movies.")
+                    h3("Usage"),
+                    p("There are two systems available to help recommend movies. Select a System from the tabs on the left and follow the steps on each page to get your movie recommendations!")
+                  ),
+                  fluidRow(
+                    box(width = 12, title = "Meet The Authors!", status = "info", solidHeader = TRUE, collapsible = TRUE,
+                      div(class = "authors",
+                          box(width = 3, status = "success", solidHeader = TRUE, title = "Naomi Bhagat",
+                            div(style = "text-align:center",
+                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                            )
+                          ),
+                          box(width = 3, status = "success", solidHeader = TRUE, title = "Joe May",
+                            div(style = "text-align:center",
+                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                            )
+                          ),
+                          box(width = 3, status = "success", solidHeader = TRUE, title = "Michael Miller",
+                            div(style = "text-align:center",
+                                tags$img(src = 'test.jpg?raw=true', height = 150)
+                            )
+                          )
+                      )
+                    )
                   )
                 ),
                 tabItem(
                   tabName = "genre",
+                  mainPanel(
+                    h3("System I: Genre"),
+                    p("In order to provide a variety of recommendations, we suggest movies from three separate categories. Our implementation generates parameterized number of recommendations from each category, then randomly samples the set for the final recommendations."),
+                  ),
                   fluidRow(
                     box(width = 12, title = "Step 1: Select your favorite genre", status = "info", solidHeader = TRUE, collapsible = TRUE,
                         div(class = "selectgenre",

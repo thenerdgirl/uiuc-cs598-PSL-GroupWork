@@ -12,6 +12,8 @@ suppressMessages({
 # SERVER #
 ##########
 
+function(input, output) {}
+
 shinyServer(function(input, output, session) {
 
   # show the movies to be rated
@@ -63,7 +65,7 @@ shinyServer(function(input, output, session) {
       list(fluidRow(lapply(1:num_movies, function(j) {
         box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
           div(style = "text-align:center", 
-              a(img(src = paste0(small_image_url, recommendations$MovieID[(i - 1) * num_movies + j], '.jpg?raw=true'), height = 150))
+              img(src = paste0(small_image_url, recommendations$MovieID[(i - 1) * num_movies + j], '.jpg?raw=true'), height = 150)
           ),
           div(style="text-align:center; font-size: 100%", 
               strong(recommendations$Title[(i - 1) * num_movies + j])
