@@ -1,4 +1,4 @@
-packages = c('tidyverse','shiny','recommenderlab','data.table','ShinyRatingInput','shinyjs')
+packages = c('tidyverse','shiny','recommenderlab','data.table','shinyjs','devtools')
 
 # if packages don't exist, install. Then call library on them
 for (package in packages) {
@@ -9,5 +9,6 @@ for (package in packages) {
 }
 
 install.packages("shinydashboard")
+devtools::install_github("stefanwilhelm/ShinyRatingInput")
 
 runApp("app")
