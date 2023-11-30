@@ -40,7 +40,7 @@ shinyUI(
                           ),
                           box(width = 4, status = "success", solidHeader = TRUE, title = "Joe May",
                             div(style = "text-align:center",
-                                tags$img(src = 'test.jpg?raw=true', height = 300)
+                                tags$img(src = 'joe.jpg?raw=true', height = 300)
                             )
                           ),
                           box(width = 4, status = "success", solidHeader = TRUE, title = "Michael Miller",
