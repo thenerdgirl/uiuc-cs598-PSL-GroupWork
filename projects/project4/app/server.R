@@ -22,10 +22,9 @@ shinyServer(function(input, output, session) {
     lapply(1:num_rows, function(i) {
       list(fluidRow(lapply(1:num_movies, function(j) {
         list(box(width = 2,
-                 div(style = "text-align:center", img(src = movies$image_url[(i - 1) * num_movies + j], style = "max-height:150")),
-                 div(style = "text-align:center; color: #999999; font-size: 80%", movies$authors[(i - 1) * num_movies + j]),
-                 div(style = "text-align:center", strong(movies$title[(i - 1) * num_movies + j])),
-                 div(style = "text-align:center; font-size: 150%; color: #f0ad4e;", ratingInput(paste0("select_", movies$book_id[(i - 1) * num_movies + j]), label = "", dataStop = 5)))) #00c0ef
+                 div(style = "text-align:center", img(src = movies$image_url[(i - 1) * num_movies + j], height = 150)),
+                 div(style = "text-align:center", strong(movies$Title[(i - 1) * num_movies + j])),
+                 div(style = "text-align:center; font-size: 150%; color: #f0ad4e;", ratingInput(paste0("select_", movies$MovieID[(i - 1) * num_movies + j]), label = "", dataStop = 5)))) #00c0ef
       })))
     })
   })
