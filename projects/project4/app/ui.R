@@ -54,10 +54,6 @@ shinyUI(
                 ),
                 tabItem(
                   tabName = "genre",
-                  mainPanel(
-                    h3("System I: Genre"),
-                    p("In order to provide a variety of recommendations, we suggest movies from three separate categories. Our implementation generates parameterized number of recommendations from each category, then randomly samples the set for the final recommendations."),
-                  ),
                   fluidRow(
                     box(width = 12, title = "Step 1: Select your favorite genre", status = "info", solidHeader = TRUE, collapsible = TRUE,
                         div(class = "selectgenre",
