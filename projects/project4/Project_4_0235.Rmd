@@ -311,10 +311,23 @@ newhype = matrix(NA, nrow = 1, ncol = ncol(sim_matrix))
 names(newhype) = colnames(sim_matrix)
 newhype['m1613'] = 5
 newhype['m1755'] = 4
+newhype = matrix(newhype, nrow = 1, ncol = ncol(sim_matrix))
 
-myIBCF(user1181)
-myIBCF(user1351)
-myIBCF(newhype)
+get_recommendations = function(user){
+  username = deparse(substitute(user))
+  cat("The top 10 recommended movies for",substitute(username),"are:\n")
+  IBCF = myIBCF(user)
+  rec_addresses = sub("^m", "", IBCF)
+  titles = movies[rec_addresses,"Title"]
+  listed_titles = paste0(seq_along(titles), ") ", titles)
+  cat(listed_titles, sep = "\n")
+  #return(titles)
+}
+
+get_recommendations(user1181)
+get_recommendations(user1351)
+get_recommendations(newhype)
+
 
 
 ```
