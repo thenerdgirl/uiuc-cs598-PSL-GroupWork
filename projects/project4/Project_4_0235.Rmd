@@ -211,5 +211,111 @@ write_csv(to_csv, 'genre_recommendations.csv')
 # System II: Recommendation Based on IBCF
 
 ```{r system2, eval = TRUE}
+
+ratings = read.csv('Rmat.csv')
+R = ratings
+R
+
+r_avg = rowMeans(R, na.rm = TRUE)
+R_norm = R-r_avg
+R_norm
+
+# Function to implement Cosine Similarity Calculation takes vectors of same length as arguments
+get_cosine = function(Ri,Rj){
+
+  # Create index for set Iij, get cardinality of set, create subsets of Ri and Rj indexed by Iij
+  Iij = !is.na(Ri) & !is.na(Rj)
+  Iij_count = sum(Iij, na.rm=TRUE)
+  ri = Ri[Iij]
+  rj = Rj[Iij]
+  # Perform initial calculations in order to separate cases
+  RiRj = sum(ri * rj)
+  Ri2 = sqrt(sum(ri^2))
+  Rj2 = sqrt(sum(rj^2))
+
+  # Return NA, if less than three of the same people rated the same movie 
+  # if or one sum square equals zero. Otherwise, calculat cosine similarity.
+  if((Iij_count<3)|((Ri2*Rj2)==0)){
+    Sij = NA
+  } else {
+    Sij = .5+ .5*(RiRj/(Ri2 * Rj2))
+  }
+  return(Sij)
+}
+
+create_similarity_matrix = function(R) {
+  t0 = Sys.time()
+  m_movies = ncol(R)
+  movie_names = colnames(R)
+  S = matrix(NA, nrow = m_movies, ncol = m_movies,
+            dimnames = list(movie_names, movie_names))
+  
+  for (i in 1:m_movies) {
+  print(i)
+    ti0=Sys.time()
+    for (j in 1:m_movies) {
+      if (i != j) {
+        x = get_cosine(R[, i], R[, j])
+        S[i, j] = x
+        #S[j, i] = x
+      }
+    }
+    #if(i==100){ break }  
+  #print(S[, i])
+  tif = Sys.time()
+  time = tif - ti0
+  print(time)
+  
+  }
+  tf = Sys.time()
+  time = tf - t0
+  print(time)
+  #write.csv(S, file = "S.csv")
+  return(S)
+}
+
+
+sim_matrix=create_similarity_matrix(R_norm)
+
+keep_top_30 <- function(r) {
+  k=30
+  ranked_row = rank(-r, na.last = "keep", ties.method = "min")
+  r[ranked_row > k] = NA
+  return(r)
+}
+S = t(apply(sim_matrix, 1, keep_top_30))
+write.csv(S, file = "S.csv")
+display_movies = c('m1','m10','m100','m1510','m260','m3212')
+sim_matrix[display_movies, display_movies]
+
+
+myIBCF = function(newuser){
+  similarity_matrix = read.csv("S.csv", row.names = 1)
+  recommend_limit = 10
+  names(newuser) = colnames(similarity_matrix)
+  sr = colSums(similarity_matrix * t(newuser), na.rm = TRUE)
+  s = rowSums(similarity_matrix, na.rm = TRUE)
+  predicted_ranks = ifelse(s != 0, sr/s, NA)
+  
+  #print(predicted_ranks )
+  ordered_predictions = order(predicted_ranks, decreasing = TRUE)
+  ordered_predictions_index = ordered_predictions[1:min(recommend_limit, length(newuser))]
+  return(names(newuser)[ordered_predictions_index])
+}
+
+
+user1181 = R['u1181',]
+user1351 = R['u1351',]
+
+newhype = matrix(NA, nrow = 1, ncol = ncol(sim_matrix))
+names(newhype) = colnames(sim_matrix)
+newhype['m1613'] = 5
+newhype['m1755'] = 4
+
+myIBCF(user1181)
+myIBCF(user1351)
+myIBCF(newhype)
+
+
 ```
 

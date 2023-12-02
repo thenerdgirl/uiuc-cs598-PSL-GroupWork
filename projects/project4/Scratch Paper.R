@@ -128,15 +128,20 @@ create_similarity_matrix = function(R) {
   
   for (i in 1:m_movies) {
   print(i)
+    ti0=Sys.time()
     for (j in 1:m_movies) {
       if (i != j) {
         x = get_cosine(R[, i], R[, j])
         S[i, j] = x
-        S[j, i] = x
+        #S[j, i] = x
       }
     }
     #if(i==100){ break }  
-  print(S[, i])
+  #print(S[, i])
+  tif = Sys.time()
+  time = tif - ti0
+  print(time)
+  
   }
   tf = Sys.time()
   time = tf - t0
@@ -148,26 +153,91 @@ create_similarity_matrix = function(R) {
 x=create_similarity_matrix(R_norm)
 print(x)
 
-x['m1','m10']
-x['m1','m100']
-x[1,2]
-
+keep_top_30 <- function(r) {
+  k=30
+  ranked_row = rank(-r, na.last = "keep", ties.method = "min")
+  r[ranked_row > k] = NA
+  return(r)
+}
+S = t(apply(x, 1, keep_top_30))
 View(S)
+
+
+
+S = t(apply(Y, 1, keep_top_30))
+write.csv(S, file = "S.csv")
+
+
+
+myIBCF = function(newuser){
+  similarity_matrix = read.csv("S.csv", row.names = 1)
+  #print(similarity_matrix)
+  #print(newuser)
+  recommend_limit = 3
+  names(newuser) = colnames(similarity_matrix)
+  sr = colSums(similarity_matrix*newuser, na.rm = TRUE)
+  s = rowSums(similarity_matrix, na.rm = TRUE)
+  predicted_ranks = ifelse(s != 0, sr/s, NA)
+  
+  #print(predicted_ranks )
+  ordered_predictions = order(predicted_ranks, decreasing = TRUE)
+  ordered_predictions_index = ordered_predictions[1:min(recommend_limit,length(newuser))]
+  return(names(newuser)[ordered_predictions_index])
+}
+
+display_movies = c('m1','m10','m100','m1510','m260','m3212')
+Y=x[display_movies,display_movies]
+U = c(5,2,2,4,1,5)
+myIBCF(U)
+
+
+
+
+
+
+View(x)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 R = R_norm[,c('m1','m10','m100')]
 cosine_similarity = function(R) {
 
-  dot_product = R %*% t(R)
-  R2 = R^2
-  magnitude = sqrt(rowSums(R2, na.rm = TRUE))
   
-  S = dot_product / (magnitude %*% t(magnitude))
+
   
-  diag(S) = NA
-  
-  S[rowSums(!is.na(R)) < 3, ] = NA
-  S[, rowSums(!is.na(R)) < 3] = NA
-  
+Ri = R[,'m1']
+M = R
+Mi = data.frame(replicate(3,Ri))
+
+Ii = !is.na(Mi) & !is.na(M)
+
+M = M[Ii]
+Mi = Mi[Ii]
+
+MiM = colSums(Mi * M, na.rm = TRUE)
+Mi2 = sqrt(colSums(Mi^2, na.rm=TRUE))
+M2 = sqrt(colSums(M^2, na.rm=TRUE))
+
+y=.5+.5*(MiM/(Mi2*M2))
+y
+
   return(S)
 }
 
