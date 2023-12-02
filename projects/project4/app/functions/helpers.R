@@ -91,7 +91,18 @@ get_user_ratings = function(value_list) {
   dat = dat[Rating > 0]
 }
 
-# Our System I implementation
+############
+# System 1 #
+############
+
+get_genres = function() {
+  suppressMessages({
+    rec_tibble = read_csv('data/genre_recommendations.csv')
+  })
+  genres = unique(rec_tibble$Genre)
+  return(genres)
+}
+
 get_genre_recommendations = function(movies, genre) {
   return(movies %>% filter(Genre == genre))
 }

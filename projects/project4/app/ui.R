@@ -6,6 +6,7 @@ library(data.table)
 library(ShinyRatingInput)
 library(shinyjs)
 
+source('functions/init.R')
 source('functions/helpers.R')
 
 shinyUI(
@@ -15,6 +16,7 @@ shinyUI(
           
           # Icons: https://rstudio.github.io/shinydashboard/appearance.html#icons
           dashboardSidebar(sidebarMenu(
+            menuItem("Home", tabName = "home", icon = icon("house")),
             menuItem("System I: Genre", tabName = "genre", icon = icon("film")),
             menuItem("System II: Rating", tabName = "rating", icon = icon("star"))
           )),
@@ -22,13 +24,42 @@ shinyUI(
           dashboardBody(includeCSS("css/movies.css"),
               tabItems(
                 tabItem(
+                  tabName="home",
+                  titlePanel("Welcome to the Movie Recommender!"),
+                  mainPanel(
+                    h3("Usage"),
+                    p("There are two systems available to help recommend movies. Select a System from the tabs on the left and follow the steps on each page to get your movie recommendations!")
+                  ),
+                  fluidRow(
+                    box(width = 12, title = "Meet The Authors!", status = "info", solidHeader = TRUE, collapsible = FALSE,
+                      div(class = "authors",
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Naomi Bhagat",
+                            div(style = "text-align:center",
+                                tags$img(src = 'naomi.jpg?raw=true', height = 300)
+                            )
+                          ),
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Joe May",
+                            div(style = "text-align:center",
+                                tags$img(src = 'joe.jpg?raw=true', height = 300)
+                            )
+                          ),
+                          box(width = 4, status = "success", solidHeader = TRUE, title = "Michael Miller",
+                            div(style = "text-align:center",
+                                tags$img(src = 'michael.jpg?raw=true', height = 300)
+                            )
+                          )
+                      )
+                    )
+                  )
+                ),
+                tabItem(
                   tabName = "genre",
                   fluidRow(
                     box(width = 12, title = "Step 1: Select your favorite genre", status = "info", solidHeader = TRUE, collapsible = TRUE,
                         div(class = "selectgenre",
                             selectInput("genre_dropdown", 
                                         label = "Select a genre from the dropdown below",
-                                        choices = c("Action"),
+                                        choices = get_genres(),
                                         selected = "Action"),
                         )
                     )
