@@ -212,15 +212,18 @@ write_csv(to_csv, 'genre_recommendations.csv')
 
 ```{r system2, eval = TRUE}
 
+# Import ratings matrix: Use Rmat, since rows are userIDs, columns are movieIDs, and values are ratings
 ratings = read.csv('Rmat.csv')
 R = ratings
-R
 
+# SII.1. Normalizing the rating matrix
+# Calculate row means for non-NA entries, subtract means from each row, and thus center each row 
 r_avg = rowMeans(R, na.rm = TRUE)
 R_norm = R-r_avg
-R_norm
 
-# Function to implement Cosine Similarity Calculation takes vectors of same length as arguments
+# SII.2. Compute Cosine similarity and create matrix among movies
+
+# SII.2.a. Function to implement Cosine Similarity Calculation takes vectors of same length as arguments
 get_cosine = function(Ri,Rj){
 
   # Create index for set Iij, get cardinality of set, create subsets of Ri and Rj indexed by Iij
@@ -243,16 +246,26 @@ get_cosine = function(Ri,Rj){
   return(Sij)
 }
 
+# SII.2.b. Function to create Cosine Similarity matrix
 create_similarity_matrix = function(R) {
+  
+  # Debugging code - keep track of time
   t0 = Sys.time()
+  
+  # Get number of columns, names of columns, and initialize empty NA matrix
   m_movies = ncol(R)
   movie_names = colnames(R)
   S = matrix(NA, nrow = m_movies, ncol = m_movies,
             dimnames = list(movie_names, movie_names))
   
+  # Loop through each column to determine that movie's similarity to all other movies
   for (i in 1:m_movies) {
-  print(i)
+    
+    # Debugging code - keep track of time
+    print(i)
     ti0=Sys.time()
+    
+    # Loop through each column to compare columns of the ith movie to all other columns
     for (j in 1:m_movies) {
       if (i != j) {
         x = get_cosine(R[, i], R[, j])
@@ -260,50 +273,73 @@ create_similarity_matrix = function(R) {
         #S[j, i] = x
       }
     }
-    #if(i==100){ break }  
-  #print(S[, i])
-  tif = Sys.time()
-  time = tif - ti0
-  print(time)
+    # Debugging code - break early for full matrix
+    #if(i==100){ break }
+    # Debugging code - keep track of time for ith iteration
+    tif = Sys.time()
+    time = tif - ti0
+    print(time)
   
   }
+  # Debugging code - keep track of time for entire process
   tf = Sys.time()
   time = tf - t0
   print(time)
-  #write.csv(S, file = "S.csv")
   return(S)
 }
 
-
+# Actually load similarity matrix into variable sim_matrix
 sim_matrix=create_similarity_matrix(R_norm)
 
+# SII.3. Create modified 3706x3706 similarity matrix S, with only top 30 cosine similarities
+
+# SII.3.a. Function to get top 30 similarities and NA every other value 
 keep_top_30 <- function(r) {
   k=30
   ranked_row = rank(-r, na.last = "keep", ties.method = "min")
   r[ranked_row > k] = NA
   return(r)
 }
+
+# Actually apply function to sim_matrix to create S
 S = t(apply(sim_matrix, 1, keep_top_30))
+
+# SII.3.b.  Save the function online
 write.csv(S, file = "S.csv")
+
+# SII.3.c.  display pairwise similarity values from S for specified movies
 display_movies = c('m1','m10','m100','m1510','m260','m3212')
 sim_matrix[display_movies, display_movies]
 
+# SII.4. Create myIBCF
 
+# SII.4.a. actually create function taking newuser as input
 myIBCF = function(newuser){
+  
+  # Download similarity matrix S, limit predictions, and add labels to the newuser's ratings
   similarity_matrix = read.csv("S.csv", row.names = 1)
   recommend_limit = 10
   names(newuser) = colnames(similarity_matrix)
+  
+  # Get sum product of Sli and wi for movie l (right hand side/numerator of equation)
   sr = colSums(similarity_matrix * t(newuser), na.rm = TRUE)
+  
+  # Get sum of similarity values for movie l (left hand side/denominator of equation)
   s = rowSums(similarity_matrix, na.rm = TRUE)
+  
+  # Compute predicted rank, so long as denominator =/= zero
   predicted_ranks = ifelse(s != 0, sr/s, NA)
   
   #print(predicted_ranks )
+  # Sort predicted ranks, index the highest ranks, and cut off list at 10
   ordered_predictions = order(predicted_ranks, decreasing = TRUE)
   ordered_predictions_index = ordered_predictions[1:min(recommend_limit, length(newuser))]
   return(names(newuser)[ordered_predictions_index])
 }
 
+# SII.5. Test myIBCF
 
+# SII.5.a. get ratings from user u1181 and u1351. Create hypothetical user.
 user1181 = R['u1181',]
 user1351 = R['u1351',]
 
@@ -313,17 +349,30 @@ newhype['m1613'] = 5
 newhype['m1755'] = 4
 newhype = matrix(newhype, nrow = 1, ncol = ncol(sim_matrix))
 
+# SII.5.b. create function to get and print user recommendations
+
+# Create function to input user ratings, get ratings predictions from IBCF, and generate top 10 recommendations
 get_recommendations = function(user){
+  
+  # Get name of dataframe input for purposes of printing name
   username = deparse(substitute(user))
   cat("The top 10 recommended movies for",substitute(username),"are:\n")
+  
+  # Run user rating vector through IBCF
   IBCF = myIBCF(user)
+  
+  # Remove m to create ID vector compatible with above movie dataframe
   rec_addresses = sub("^m", "", IBCF)
+  #titles = movies[rec_addresses,c("Title","MovieID")]
+  
+  # Get movie titles, corresponding rank, and print top 10
   titles = movies[rec_addresses,"Title"]
   listed_titles = paste0(seq_along(titles), ") ", titles)
   cat(listed_titles, sep = "\n")
   #return(titles)
 }
 
+# SII.5.c. actually input users into function
 get_recommendations(user1181)
 get_recommendations(user1351)
 get_recommendations(newhype)
