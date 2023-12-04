@@ -80,4 +80,49 @@ shinyServer(function(input, output, session) {
   #                                     Rating recommendations and results                                      #
   ###############################################################################################################
   
+  ratings_df <- eventReactive(input$genreBtn, {
+    withBusyIndicatorServer("genreBtn", { # showing the busy indicator
+        # hide the rating container
+        useShinyjs()
+        jsCode <- "document.querySelector('[data-widget=collapse]').click();"
+        runjs(jsCode)
+        
+        # TODO add stuff here for getting the ratings recommendations
+
+        # get the user's rating data
+        input_values = reactiveValuesToList(input)
+        user_ratings = get_user_ratings(input_values)
+
+        print(user_ratings)
+
+        # return(recommendations)
+        
+    }) # still busy
+    
+  }) # clicked on button
+
+  # display the recommendations
+  output$ratingResults <- renderUI({
+    # top 10 recommendations
+    num_rows <- 2
+    num_movies <- 5
+    recommendations <- genre_df()
+
+    small_image_url = "https://liangfgithub.github.io/MovieImages/"
+
+    lapply(1:num_rows, function(i) {
+      list(fluidRow(lapply(1:num_movies, function(j) {
+        box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
+          div(style = "text-align:center", 
+              img(src = paste0(small_image_url, recommendations$MovieID[(i - 1) * num_movies + j], '.jpg?raw=true'), height = 150)
+          ),
+          div(style="text-align:center; font-size: 100%", 
+              strong(recommendations$Title[(i - 1) * num_movies + j])
+          )
+        )        
+      }))) # columns
+    }) # rows
+    
+  }) # renderUI function
+
 }) # server function
