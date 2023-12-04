@@ -17,6 +17,9 @@ movies$Year = as.numeric(unlist(lapply(movies$Title, function(x) substr(x, nchar
 small_image_url = "https://liangfgithub.github.io/MovieImages/"
 movies$image_url = sapply(movies$MovieID, function(x) paste0(small_image_url, x, '.jpg?raw=true'))
 
+# print(">>> INIT.R")
+# print(movies)
+
 # ratings data
 # ratings = read.csv(paste0(myurl, 'ratings.dat?raw=true'), sep = ':', colClasses = c('integer', 'NULL'), header = FALSE)
 ratings = read.csv(paste0('data/', 'ratings.dat'), sep = ':', colClasses = c('integer', 'NULL'), header = FALSE)

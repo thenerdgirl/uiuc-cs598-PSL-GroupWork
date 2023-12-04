@@ -87,8 +87,6 @@ shinyServer(function(input, output, session) {
         jsCode <- "document.querySelector('[data-widget=collapse]').click();"
         runjs(jsCode)
         
-        # TODO add stuff here for getting the ratings recommendations
-
         # get the user's rating data
         input_values = reactiveValuesToList(input)
         user_ratings = get_user_ratings(input_values)
@@ -97,9 +95,9 @@ shinyServer(function(input, output, session) {
         print(user_ratings)
 
         print("Getting recommendations")
-        get_rating_recommendations(user_ratings)
+        recommendations = get_rating_recommendations(user_ratings)
 
-        # return(recommendations)
+        return(recommendations)
         
     }) # still busy
     
@@ -118,10 +116,10 @@ shinyServer(function(input, output, session) {
       list(fluidRow(lapply(1:num_movies, function(j) {
         box(width = 2, status = "success", solidHeader = TRUE, title = paste0("Rank ", (i - 1) * num_movies + j),
           div(style = "text-align:center", 
-              img(src = paste0(small_image_url, recommendations$MovieID[(i - 1) * num_movies + j], '.jpg?raw=true'), height = 150)
+              img(src = paste0(small_image_url, recommendations$rec_ids[(i - 1) * num_movies + j], '.jpg?raw=true'), height = 150)
           ),
           div(style="text-align:center; font-size: 100%", 
-              strong(recommendations$Title[(i - 1) * num_movies + j])
+              strong(recommendations$rec_titles[(i - 1) * num_movies + j])
           )
         )        
       }))) # columns

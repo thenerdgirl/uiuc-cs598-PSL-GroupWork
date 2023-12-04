@@ -111,57 +111,83 @@ get_genre_recommendations = function(movies, genre) {
 # System 2 #
 ############
 
-myIBCF = function(newuser){
+myIBCF = function(newuser) {
+  print("In myIBCF function...")
+
+  print(movies)
+
   # Download similarity matrix S, limit predictions, and add labels to the newuser's ratings
   similarity_matrix = read.csv("data/S.csv", row.names = 1)
   recommend_limit = 10
   names(newuser) = colnames(similarity_matrix)
   
+  print("Downloaded sim matrix...")
+
   # Get sum product of Sli and wi for movie l (right hand side/numerator of equation)
   sr = colSums(similarity_matrix * t(newuser), na.rm = TRUE)
   
+  print("Calculated sr...")
+
   # Get sum of similarity values for movie l (left hand side/denominator of equation)
   s = rowSums(similarity_matrix, na.rm = TRUE)
   
+  print("Calculated s...")
+
   # Compute predicted rank, so long as denominator =/= zero
   predicted_ranks = ifelse(s != 0, sr/s, NA)
   
+  print("Calculated predicted ranks...")
+
   # Sort predicted ranks and count number of predictions
   ordered_predictions = order(predicted_ranks, decreasing = TRUE)
   predictions=sum(predicted_ranks>0, na.rm = TRUE)
 
+  print("Stuff is sorted and counted...")
+
   # Determine if there are enough predictions or if an alternative method must be determined
   if(predictions >= recommend_limit){
+    print("Yes there are enough recs...")
     # If there are enough predictions, get the index for the predictions, and return the movieID
     ordered_predictions_index = ordered_predictions[1:recommend_limit]  
     suggestion_names = names(newuser)[ordered_predictions_index]
   } else {
+    print("Not enough recs...")
     # If there aren't enough predictions, append alphabetically sorted movies, and return the movieID
     ordered_predictions_index = ordered_predictions[1:predictions]
     prediction_names = names(newuser)[ordered_predictions_index]
     alphabetical_movies = movies$MovieID[order(movies$Title)]
     suggestion_names = c(prediction_names, alphabetical_movies)[1:recommend_limit] 
   }
+
   return(suggestion_names)
 }
 
-get_rating_recommendations = function(user) {
-  # Get name of dataframe input for purposes of printing name
-  username = deparse(substitute(user))
-  # cat("The top 10 recommended movies for",substitute(username),"are:\n")
+get_rating_recommendations = function(user_ratings) {
+  num_total_movies = 3706
+
+  # create a user
+  user = matrix(NA, nrow = 1, ncol = num_total_movies)
+
+  # read in our user ratings
+  for(i in 1:nrow(user_ratings)) {
+    user[paste0('m', user_ratings$MovieID[i])] = user_ratings$Rating[i]
+  }
+
+  new_user = matrix(user, nrow = 1, ncol = num_total_movies)
   
   # Run user rating vector through IBCF
-  IBCF = myIBCF(user)
+  IBCF = myIBCF(new_user)
 
   # Remove m to create ID vector compatible with above movie dataframe
-  rec_addresses = sub("^m", "", IBCF)
+  rec_ids = sub("^m", "", IBCF)
   
   # Get movie titles, corresponding rank, and print top 10
-  titles = movies$Title[match(rec_addresses, movies$MovieID)]
+  rec_titles = movies$Title[match(rec_ids, movies$MovieID)]
 
-  print(rec_addresses)
-  
-  # listed_titles = paste0(seq_along(titles), ") ", titles)
-  # cat(listed_titles, sep = "\n")
-  # return(titles)
+  # print(rec_ids)
+  # print(rec_titles)
+
+  recs = data.frame(rec_ids, rec_titles)
+
+  return(recs)
 }
