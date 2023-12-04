@@ -330,11 +330,23 @@ myIBCF = function(newuser){
   # Compute predicted rank, so long as denominator =/= zero
   predicted_ranks = ifelse(s != 0, sr/s, NA)
   
-  #print(predicted_ranks )
-  # Sort predicted ranks, index the highest ranks, and cut off list at 10
+  # Sort predicted ranks and count number of predictions
   ordered_predictions = order(predicted_ranks, decreasing = TRUE)
-  ordered_predictions_index = ordered_predictions[1:min(recommend_limit, length(newuser))]
-  return(names(newuser)[ordered_predictions_index])
+  predictions=sum(predicted_ranks>0, na.rm = TRUE)
+
+  # Determine if there are enough predictions or if an alternative method must be determined
+  if(predictions >= recommend_limit){
+    # If there are enough predictions, get the index for the predictions, and return the movieID
+    ordered_predictions_index = ordered_predictions[1:recommend_limit]  
+    suggestion_names = names(newuser)[ordered_predictions_index]
+  } else {
+    # If there aren't enough predictions, append alphabetically sorted movies, and return the movieID
+    ordered_predictions_index = ordered_predictions[1:predictions]
+    prediction_names = names(newuser)[ordered_predictions_index]
+    alphabetical_movies = movies$MovieID[order(movies$Title)]
+    suggestion_names = c(prediction_names, alphabetical_movies)[1:recommend_limit] 
+  }
+  return(suggestion_names)
 }
 
 # SII.5. Test myIBCF
@@ -343,11 +355,11 @@ myIBCF = function(newuser){
 user1181 = R['u1181',]
 user1351 = R['u1351',]
 
-newhype = matrix(NA, nrow = 1, ncol = ncol(sim_matrix))
-names(newhype) = colnames(sim_matrix)
-newhype['m1613'] = 5
-newhype['m1755'] = 4
-newhype = matrix(newhype, nrow = 1, ncol = ncol(sim_matrix))
+new_hypothetical_user = matrix(NA, nrow = 1, ncol = ncol(sim_matrix))
+names(new_hypothetical_user) = colnames(sim_matrix)
+new_hypothetical_user['m1613'] = 5
+new_hypothetical_user['m1755'] = 4
+a_new_hypothetical_user = matrix(new_hypothetical_user, nrow = 1, ncol = ncol(sim_matrix))
 
 # SII.5.b. create function to get and print user recommendations
 
@@ -360,13 +372,12 @@ get_recommendations = function(user){
   
   # Run user rating vector through IBCF
   IBCF = myIBCF(user)
-  
+
   # Remove m to create ID vector compatible with above movie dataframe
   rec_addresses = sub("^m", "", IBCF)
-  #titles = movies[rec_addresses,c("Title","MovieID")]
   
   # Get movie titles, corresponding rank, and print top 10
-  titles = movies[rec_addresses,"Title"]
+  titles = movies$Title[match(rec_addresses, movies$MovieID)]
   listed_titles = paste0(seq_along(titles), ") ", titles)
   cat(listed_titles, sep = "\n")
   #return(titles)
@@ -375,9 +386,7 @@ get_recommendations = function(user){
 # SII.5.c. actually input users into function
 get_recommendations(user1181)
 get_recommendations(user1351)
-get_recommendations(newhype)
-
-
+get_recommendations(a_new_hypothetical_user)
 
 ```
 
