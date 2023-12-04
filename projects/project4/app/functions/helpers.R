@@ -148,7 +148,7 @@ myIBCF = function(newuser){
 get_rating_recommendations = function(user) {
   # Get name of dataframe input for purposes of printing name
   username = deparse(substitute(user))
-  cat("The top 10 recommended movies for",substitute(username),"are:\n")
+  # cat("The top 10 recommended movies for",substitute(username),"are:\n")
   
   # Run user rating vector through IBCF
   IBCF = myIBCF(user)
@@ -158,7 +158,10 @@ get_rating_recommendations = function(user) {
   
   # Get movie titles, corresponding rank, and print top 10
   titles = movies$Title[match(rec_addresses, movies$MovieID)]
-  listed_titles = paste0(seq_along(titles), ") ", titles)
-  cat(listed_titles, sep = "\n")
-  #return(titles)
+
+  print(rec_addresses)
+  
+  # listed_titles = paste0(seq_along(titles), ") ", titles)
+  # cat(listed_titles, sep = "\n")
+  # return(titles)
 }

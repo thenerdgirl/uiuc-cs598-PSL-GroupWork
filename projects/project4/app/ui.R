@@ -94,7 +94,7 @@ shinyUI(
                       title = "Step 2: Discover movies you might like",
                       br(),
                       withBusyIndicatorUI(
-                        actionButton("btn", "Click here to get your recommendations", class = "btn-primary")
+                        actionButton("ratingsBtn", "Click here to get your recommendations", class = "btn-primary")
                       ),
                       br(),
                       tableOutput("ratingResults")
