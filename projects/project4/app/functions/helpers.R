@@ -111,13 +111,11 @@ get_genre_recommendations = function(movies, genre) {
 # System 2 #
 ############
 
-myIBCF = function(newuser) {
+myIBCF = function(newuser, similarity_matrix) {
   print("In myIBCF function...")
 
-  print(movies)
-
   # Download similarity matrix S, limit predictions, and add labels to the newuser's ratings
-  similarity_matrix = read.csv("data/S.csv", row.names = 1)
+  # similarity_matrix = read.csv("data/S.csv", row.names = 1)
   recommend_limit = 10
   names(newuser) = colnames(similarity_matrix)
   
@@ -136,12 +134,14 @@ myIBCF = function(newuser) {
   # Compute predicted rank, so long as denominator =/= zero
   predicted_ranks = ifelse(s != 0, sr/s, NA)
   
+  # print(view(predicted_ranks))
   print("Calculated predicted ranks...")
 
   # Sort predicted ranks and count number of predictions
   ordered_predictions = order(predicted_ranks, decreasing = TRUE)
   predictions=sum(predicted_ranks>0, na.rm = TRUE)
 
+  print(predictions)
   print("Stuff is sorted and counted...")
 
   # Determine if there are enough predictions or if an alternative method must be determined
@@ -165,8 +165,12 @@ myIBCF = function(newuser) {
 get_rating_recommendations = function(user_ratings) {
   num_total_movies = 3706
 
+  # read sim matrix
+  similarity_matrix = read.csv("data/S.csv", row.names = 1)
+
   # create a user
   user = matrix(NA, nrow = 1, ncol = num_total_movies)
+  names(user) = colnames(similarity_matrix)
 
   # read in our user ratings
   for(i in 1:nrow(user_ratings)) {
@@ -174,9 +178,12 @@ get_rating_recommendations = function(user_ratings) {
   }
 
   new_user = matrix(user, nrow = 1, ncol = num_total_movies)
+
+  # print(new_user)
+  # print(dim(new_user))
   
   # Run user rating vector through IBCF
-  IBCF = myIBCF(new_user)
+  IBCF = myIBCF(new_user, similarity_matrix)
 
   # Remove m to create ID vector compatible with above movie dataframe
   rec_ids = sub("^m", "", IBCF)
