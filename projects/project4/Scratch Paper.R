@@ -107,7 +107,14 @@ get_cosine = function(Ri,Rj){
   RiRj = sum(ri * rj)
   Ri2 = sqrt(sum(ri^2))
   Rj2 = sqrt(sum(rj^2))
-
+  #print(ri * rj)
+  
+  #print(ri)
+  #print(rj)
+  #print( RiRj)
+  #print(Ri2)
+  #print(Rj2)
+  #print( Ri2*Rj2)
   # Return NA, if less than three of the same people rated the same movie 
   # if or one sum square equals zero. Otherwise, calculat cosine similarity.
   if((Iij_count<3)|((Ri2*Rj2)==0)){
@@ -138,7 +145,7 @@ create_similarity_matrix = function(R) {
         #S[j, i] = x
       }
     }
-    #if(i==100){ break }  
+    #if(i==10){ break }  
   #print(S[, i])
   tif = Sys.time()
   time = tif - ti0
@@ -154,6 +161,115 @@ create_similarity_matrix = function(R) {
 #x=create_similarity_matrix(R_norm[,1:5])
 x=create_similarity_matrix(R_norm)
 print(x)
+
+
+cos = function(x,j){
+  print(j)
+  t1 = Sys.time() 
+  n = nrow(x)
+  m = ncol(x)
+  Ri = x
+  rj = Ri[,j]
+  Rj = matrix(rep(rj, times=m), ncol=m, byrow = FALSE)
+  t2 = Sys.time()
+  #nari = is.na(Ri)
+  #narj = is.na(Rj)
+  t3 = Sys.time()
+  #Rj[nari] = NA
+  #Ri[narj] = NA
+  ####
+  #Rj[is.na(Rj)] = 0
+  #Ri[is.na(Ri)] = 0
+  ###
+  t4 = Sys.time()
+  jk=colSums(!is.na(Rj))
+  t5 = Sys.time()
+  rirj = Ri%*%t(Rj)
+  riri = Ri%*%t(Ri)
+  rjrj = Rj%*%t(Rj)
+  t6 = Sys.time()
+  RiRj = colSums(rirj)
+  Ri1 = colSums(riri)
+  Rj1 = colSums(rjrj)
+  #RiRj = colSums(rirj, na.rm = TRUE)
+  #Ri1 = colSums(riri, na.rm = TRUE)
+  #Rj1 = colSums(rjrj, na.rm = TRUE)
+  t7 = Sys.time()
+  Ri2 = sqrt(Ri1)
+  Rj2 = sqrt(Rj1)
+  
+
+  Sij = .5+ .5*(RiRj/(Ri2 * Rj2))
+  Sij[j] = NA
+  Sij[jk<3] = NA
+
+  #print(t2-t1)
+  #print(t3-t2)
+  #print(t4-t3)
+  #print(t5-t4)
+  #print(t6-t5)
+  #print(t7-t6)
+  print(t7-t1)
+  return(Sij)
+}
+
+matrix1 <- matrix(c(1,NA,3,4,2,3,NA,5,3,3,3,NA,7,8,7,9,3,4,5,6,5,4,3,2), nrow = 6)
+get_cosine(matrix1[,1],matrix1[,2])
+create_similarity_matrix(matrix1)
+cos(matrix1,1)
+
+library(Matrix)
+wzeros = R_norm
+wzeros[is.na(R_norm)] = 0
+
+rownames(wzeros) <- NULL
+colnames(wzeros) <- NULL
+sparse = Matrix(as.numeric(unlist(wzeros)),nrow = nrow(wzeros), sparse=TRUE)
+
+View(wzeros)
+
+make_S = function(mat){
+m=ncol(mat)
+se = matrix(nrow = m, ncol = m)
+t0 = Sys.time()  
+
+  for (i in 1:m) {
+    se[,i]=cos(mat,i)
+    #if(i==10){break}
+  }
+tf = Sys.time()
+time = tf - t0
+print(time)
+return(se)
+}
+S=make_S(R_norm)
+S=make_S(sparse)
+View(S)
+
+create_similarity_matrix(R_norm)
+
+Ri =matrix1
+j=1
+rj = Ri[,j]
+Rj = matrix(rep(rj, times=m), ncol=m, byrow = FALSE)
+Rj
+
+
+
+display_movies = c('m1','m10','m100','m1510','m260','m3212')
+display_movies = c('m1','m10')
+new=R_norm[,display_movies]
+get_cosine(R_norm[,'m1'],R_norm[,'m10'])
+cos(new,1)
+
+w=cos(R_norm,1)
+View(w)
+get_cosine(matrix1[,2],matrix1[,1])
+
+
+
+
+
 
 
 
