@@ -118,6 +118,8 @@ get_cosine = function(Ri,Rj){
   return(Sij)
 }
 
+y = get_cosine(R_norm[,1],R_norm[,2])
+y
 
 create_similarity_matrix = function(R) {
   t0 = Sys.time()
@@ -152,6 +154,36 @@ create_similarity_matrix = function(R) {
 #x=create_similarity_matrix(R_norm[,1:5])
 x=create_similarity_matrix(R_norm)
 print(x)
+
+
+
+
+# Function to calculate cosine similarity between two vectors
+cosine_similarity <- function(x, y) {
+  # Get indices where both x and y are not NA
+  idx <- !is.na(x) & !is.na(y)
+  
+  # Calculate dot product and magnitudes
+  dot_product <- sum(x[idx] * y[idx])
+  magnitude_x <- sqrt(sum(x[idx]^2))
+  magnitude_y <- sqrt(sum(y[idx]^2))
+  
+  # Calculate cosine similarity
+  if (magnitude_x != 0 && magnitude_y != 0) {
+    return(dot_product / (magnitude_x * magnitude_y))
+  } else {
+    return(0) # Return 0 for vectors with insufficient numerical values
+  }
+}
+
+cosine_similarity(R_norm[,1], R_norm[, 2])
+
+m <- ncol(R_norm)
+result <- sapply(1:m, function(j) {
+  cosine_similarity(R_norm[,1], R_norm[, j])
+})
+result
+
 
 keep_top_30 <- function(r) {
   k=30
