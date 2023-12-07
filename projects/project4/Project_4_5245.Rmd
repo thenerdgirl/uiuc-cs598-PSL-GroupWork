@@ -1,0 +1,369 @@
+---
+title: "Project 4: Movie Recommender System"
+subtitle: "CS598: Practical Statistical Learning"
+author: 
+ - name: Naomi Bhagat - nbhagat3
+ - name: Michael Miller - msmille3
+ - name: Joe May - jemay3
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    theme: readable
+    toc: yes
+urlcolor: cyan
+---
+
+# Assignment Data
+Program: MCS-DS  
+Team contributions:
+
+| Person         | Contribution |
+|----------      |----------|
+| Naomi Bhagat   | Application |
+| Michael Miller | System 1 |
+| Joe May        | System 2  |
+
+Assignment URL: [campuswire post](https://liangfgithub.github.io/Proj/F23_Proj4.html)
+
+# Setup
+Install packages and set random seed.
+```{r setup, eval=TRUE, warning=FALSE, message=FALSE}
+# add required packages
+packages = c('tidyverse')
+
+# if packages don't exist, install. Then call library on them
+for (package in packages) {
+  if (!requireNamespace(package, quietly=TRUE)) {
+    install.packages(package)
+  }
+  library(package, character.only=TRUE)
+}
+
+# set seed
+set.seed(5245)
+```
+
+Download and preprocess data. 
+```{r preprocess, eval = TRUE}
+myurl = "https://liangfgithub.github.io/MovieData/"
+
+# movie data
+# movies = readLines(paste0(myurl, 'movies.dat?raw=true'))
+movies = readLines(paste0('app/data/', 'movies.dat'))
+movies = strsplit(movies, split = "::", fixed = TRUE, useBytes = TRUE)
+movies = matrix(unlist(movies), ncol = 3, byrow = TRUE)
+movies = data.frame(movies, stringsAsFactors = FALSE)
+colnames(movies) = c('MovieID', 'Title', 'Genres')
+movies$MovieID = as.integer(movies$MovieID)
+
+# convert accented characters
+movies$Title = iconv(movies$Title, "latin1", "UTF-8")
+
+# extract year
+movies$Year = as.numeric(unlist(lapply(movies$Title, function(x) substr(x, nchar(x)-4, nchar(x)-1))))
+
+small_image_url = "https://liangfgithub.github.io/MovieImages/"
+movies$image_url = sapply(movies$MovieID, function(x) paste0(small_image_url, x, '.jpg?raw=true'))
+
+# ratings data
+# ratings = read.csv(paste0(myurl, 'ratings.dat?raw=true'), sep = ':', colClasses = c('integer', 'NULL'), header = FALSE)
+ratings = read.csv(paste0('app/data/', 'ratings.dat'), sep = ':', colClasses = c('integer', 'NULL'), header = FALSE)
+colnames(ratings) = c('UserID', 'MovieID', 'Rating', 'Timestamp')
+
+# user data
+# users = read.csv(paste0(myurl, 'users.dat?raw=true'), sep = ':', header = FALSE)
+users = read.csv(paste0('app/data/', 'users.dat'), sep = ':', header = FALSE)
+users = users[, -c(2,4,6,8)] # skip columns
+colnames(users) = c('UserID', 'Gender', 'Age', 'Occupation', 'Zip-code')
+```
+
+# System I: Recommendation Based on Genres
+
+We propose the following genre-based recommendation system. A description of the system is provided first, with implementation in `R` below. This section of the report generates a .csv file that will be used directly by the application to make recommendations.
+
+## Description
+
+In order to provide a variety of recommendations, we suggest movies from three separate categories. The implementation below generates parameterized number of recommendations from each category, then randomly samples the set for the final recommendations. 
+
+### All Time Favorites
+This category is defined as movies with the largest total number of 5-star reviews. In theory, these movies have been enjoyed by the largest number of people. It is worth noting that this category inherently favors older movies, as they have had more time to accumulate reviews. In addition, this category does not take into account any negative reviews, so theoretically a movie with a large number of both positive and negative reviews could still make this category. Regardless, these movies should be highly significant for the chosen genre.  
+
+### Popular Movies
+Here, we consider the average review score of movies. This means that the age of a movie does not necessarily give it an advantage. To avoid edge cases where only a few reviewers may bias scores, we filter out movies with under 100 reviews. These are well-liked movies that the user may enjoy. 
+
+### Hidden Gems
+Finally, we consider movies with the highest average rating, but with only between 5 and 100 reviews. With so few reviews, these movies are vulnerable to being biased by only a few reviewers. We choose to include a small number of these movies because:  
+  1. It may expose the user to good movies that are not well known.  
+  2. By giving these movies more exposure, they will ultimately receive more reviews and improve the overall quality of our application's recommendations.  
+
+## Limitations
+This algorithm is implemented with a fixed set of reviews. Ideally, in a real world setting we would randomize the suggestions for each user (or possibly for each visit to the application). In addition, we would periodically regenerate the overall list of recommendations to account for new reviews coming in from users. Finally, it would be useful to track a user's selections. For example, if a user selects a movie from the recommendation, we could replace it with a new recommendation. 
+
+# Implementation 
+```{r system1, eval = TRUE}
+# define the quantity of movies for each genre for each type 
+n_all_time_fav = 50
+n_popular = 40
+n_hidden = 10
+n_total_recs = 10
+
+# define params for establishing popular movies vs hidden gems
+min_reviews_popular = 100
+min_reviews_hidden = 5
+
+# first, unpack and duplicate genres so that each movie-genre combo is one row
+movie_genres = movies %>% 
+  mutate(Genres = strsplit(Genres, '\\|')) %>%
+  rename(Genre = Genres) %>%
+  unnest(Genre)
+
+# get number of 5 star reviews for calculating all time favorites
+perfect_reviews = ratings %>%
+  filter(Rating == 5) %>%
+  group_by(MovieID) %>%
+  summarize(PerfectReviews = n())
+
+# get average review for popular movies
+review_percent_popular = ratings %>%
+  group_by(MovieID) %>%
+  filter(n() >= min_reviews_popular) %>%
+  summarize(AvgRating = mean(Rating))
+  
+# get average review for hidden gems
+review_percent_hidden = ratings %>%
+  group_by(MovieID) %>%
+  filter(n() >= min_reviews_hidden) %>%
+  filter(n() < min_reviews_popular) %>%
+  summarize(AvgRating = mean(Rating))
+
+# join perfect reviews with movie genres, take top n to get all time favorites
+all_time_favorites = movie_genres %>%
+  inner_join(perfect_reviews, by="MovieID") %>%
+  arrange(desc(PerfectReviews)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_all_time_fav)
+
+all_time_favorites['Rationale'] = 'All time favorite'
+
+# we will track our final set of movies as out
+out = all_time_favorites[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')]
+
+# join average review with movie genres, take top n to get popular movies
+# note we are excluding any movie that might already be all time favorites
+popular = movie_genres %>%
+  anti_join(out, by="MovieID") %>%
+  inner_join(review_percent_popular, by="MovieID") %>%
+  arrange(desc(AvgRating)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_popular)
+popular['Rationale'] = 'Popular'
+
+out = bind_rows(out, popular[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
+
+# join average hidden gem reviews with movie genres, take top n to get hiden gems
+# note we are excluding any movies already chosen
+hidden = movie_genres %>%
+  anti_join(out, by="MovieID") %>%
+  inner_join(review_percent_hidden, by="MovieID") %>%
+  arrange(desc(AvgRating)) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_hidden)
+hidden['Rationale'] = 'Hidden gem'
+
+out = bind_rows(out, hidden[c('MovieID', 'Title', 'Genre', 'Year', 'Rationale')])
+
+# next, we randomly sample n_total_rec films from out for each genre, and we save these for use in the app
+to_csv = out %>%
+  arrange(sample(n())) %>%
+  group_by(Genre) %>%
+  slice_head(n=n_total_recs)
+  
+write_csv(to_csv, 'genre_recommendations.csv')
+```
+
+
+# System II: Recommendation Based on IBCF
+
+If fewer than 10 predictions are non-NA, we implemented a methodology to suggest movies sorted in alphanumeric order. So for example, if k movies are recommended, those are the top k choices and the next 10-k recommendations are the sorted movies. The reasoning for this, is that if the user hasn't sufficiently rated movies, and they aren't satisfied checking the recommendations, they are likely to want to passively browse movies. If they want to browse, an algorithm probably won't be able to help them decide. Additionally, this serves as an incentive for them to rate additional movies for better recommendations.
+
+# Implementation 
+```{r system2, eval = TRUE}
+
+# Import ratings matrix: Use Rmat, since rows are userIDs, columns are movieIDs, and values are ratings
+R = read.csv('Rmat.csv')
+
+# SII.1. Normalizing the rating matrix
+# Calculate row means for non-NA entries, subtract means from each row, and thus center each row 
+r_avg = rowMeans(R, na.rm = TRUE)
+R_norm = R-r_avg
+
+# SII.2. Compute Cosine similarity and create matrix among movies
+
+# SII.2.a. Function to implement Cosine Similarity Calculation takes vectors of same length as arguments
+get_cosine = function(Ri,Rj){
+
+  # Create index for set Iij, get cardinality of set, create subsets of Ri and Rj indexed by Iij
+  Iij = !is.na(Ri) & !is.na(Rj)
+  Iij_count = sum(Iij, na.rm=TRUE)
+  ri = Ri[Iij]
+  rj = Rj[Iij]
+  # Perform initial calculations in order to separate cases
+  RiRj = sum(ri * rj)
+  Ri2 = sqrt(sum(ri^2))
+  Rj2 = sqrt(sum(rj^2))
+
+  # Return NA, if less than three of the same people rated the same movie 
+  # if or one sum square equals zero. Otherwise, calculat cosine similarity.
+  if((Iij_count<3)|((Ri2*Rj2)==0)){
+    Sij = NA
+  } else {
+    Sij = .5+ .5*(RiRj/(Ri2 * Rj2))
+  }
+  return(Sij)
+}
+
+# SII.2.b. Function to create Cosine Similarity matrix
+create_similarity_matrix = function(R) {
+  
+  # Debugging code - keep track of time
+  t0 = Sys.time()
+  
+  # Get number of columns, names of columns, and initialize empty NA matrix
+  m_movies = ncol(R)
+  movie_names = colnames(R)
+  S = matrix(NA, nrow = m_movies, ncol = m_movies,
+            dimnames = list(movie_names, movie_names))
+  
+  # Loop through each column to determine that movie's similarity to all other movies
+  for (i in 1:m_movies) {
+    
+    # Debugging code - keep track of time
+    #print(i)
+    ti0=Sys.time()
+    
+    # Loop through each column to compare columns of the ith movie to all other columns
+    for (j in 1:m_movies) {
+      if (i != j) {
+        x = get_cosine(R[, i], R[, j])
+        S[i, j] = x
+        #S[j, i] = x
+      }
+    }
+    # Debugging code - break early for full matrix
+    #if(i==100){ break }
+    # Debugging code - keep track of time for ith iteration
+    tif = Sys.time()
+    time = tif - ti0
+    #print(time)
+  
+  }
+  # Debugging code - keep track of time for entire process
+  tf = Sys.time()
+  time = tf - t0
+  #print(time)
+  return(S)
+}
+
+# Actually load similarity matrix into variable sim_matrix
+sim_matrix=create_similarity_matrix(R_norm)
+
+# SII.3. Create modified 3706x3706 similarity matrix S, with only top 30 cosine similarities
+
+# SII.3.a. Function to get top 30 similarities and NA every other value 
+keep_top_30 <- function(r) {
+  k=30
+  ranked_row = rank(-r, na.last = "keep", ties.method = "min")
+  r[ranked_row > k] = NA
+  return(r)
+}
+
+# Actually apply function to sim_matrix to create S
+S = t(apply(sim_matrix, 1, keep_top_30))
+
+# SII.3.b.  Save the function online
+write.csv(S, file = "S.csv")
+
+# SII.3.c.  display pairwise similarity values from S for specified movies
+display_movies = c('m1','m10','m100','m1510','m260','m3212')
+exibit_a = sim_matrix[display_movies, display_movies]
+print(exibit_a)
+
+# SII.4. Create myIBCF
+
+# SII.4.a. actually create function taking newuser as input
+myIBCF = function(newuser){
+  
+  # Download similarity matrix S, limit predictions, and add labels to the newuser's ratings
+  similarity_matrix = read.csv("S.csv", row.names = 1)
+  recommend_limit = 10
+  names(newuser) = colnames(similarity_matrix)
+  
+  # Get sum product of Sli and wi for movie l (right hand side/numerator of equation)
+  sr = colSums(similarity_matrix * t(newuser), na.rm = TRUE)
+  
+  # Get sum of similarity values for movie l (left hand side/denominator of equation)
+  s = rowSums(similarity_matrix, na.rm = TRUE)
+  
+  # Compute predicted rank, so long as denominator =/= zero
+  predicted_ranks = ifelse(s != 0, sr/s, NA)
+  
+  # Sort predicted ranks and count number of predictions
+  ordered_predictions = order(predicted_ranks, decreasing = TRUE)
+  predictions=sum(predicted_ranks>0, na.rm = TRUE)
+
+  # Determine if there are enough predictions or if an alternative method must be determined
+  if(predictions >= recommend_limit){
+    # If there are enough predictions, get the index for the predictions, and return the movieID
+    ordered_predictions_index = ordered_predictions[1:recommend_limit]  
+    suggestion_names = names(newuser)[ordered_predictions_index]
+  } else {
+    # If there aren't enough predictions, append alphabetically sorted movies, and return the movieID
+    ordered_predictions_index = ordered_predictions[1:predictions]
+    prediction_names = names(newuser)[ordered_predictions_index]
+    alphabetical_movies = movies$MovieID[order(movies$Title)]
+    suggestion_names = c(prediction_names, alphabetical_movies)[1:recommend_limit] 
+  }
+  return(suggestion_names)
+}
+
+# SII.5. Test myIBCF
+
+# SII.5.a. get ratings from user u1181 and u1351. Create hypothetical user.
+user1181 = R['u1181',]
+user1351 = R['u1351',]
+
+new_hypothetical_user = matrix(NA, nrow = 1, ncol = ncol(sim_matrix))
+names(new_hypothetical_user) = colnames(sim_matrix)
+new_hypothetical_user['m1613'] = 5
+new_hypothetical_user['m1755'] = 4
+a_new_hypothetical_user = matrix(new_hypothetical_user, nrow = 1, ncol = ncol(sim_matrix))
+
+# SII.5.b. create function to get and print user recommendations
+
+# Create function to input user ratings, get ratings predictions from IBCF, and generate top 10 recommendations
+get_recommendations = function(user){
+  
+  # Get name of dataframe input for purposes of printing name
+  username = deparse(substitute(user))
+  cat("The top 10 recommended movies for",substitute(username),"are:\n")
+  
+  # Run user rating vector through IBCF
+  IBCF = myIBCF(user)
+
+  # Remove m to create ID vector compatible with above movie dataframe
+  rec_addresses = sub("^m", "", IBCF)
+  
+  # Get movie titles, corresponding rank, and print top 10
+  titles = movies$Title[match(rec_addresses, movies$MovieID)]
+  listed_titles = paste0(seq_along(titles), ") ", titles)
+  cat(listed_titles, sep = "\n")
+  #return(titles)
+}
+
+# SII.5.c. actually input users into function
+get_recommendations(user1181)
+get_recommendations(user1351)
+get_recommendations(a_new_hypothetical_user)
+
+```
+

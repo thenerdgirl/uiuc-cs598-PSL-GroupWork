@@ -184,6 +184,9 @@ write_csv(to_csv, 'genre_recommendations.csv')
 
 # System II: Recommendation Based on IBCF
 
+If fewer than 10 predictions are non-NA, we implemented a methodology to suggest movies sorted in alphanumeric order. So for example, if k movies are recommended, those are the top k choices and the next 10-k recommendations are the sorted movies. The reasoning for this, is that if the user hasn't sufficiently rated movies, and they aren't satisfied checking the recommendations, they are likely to want to passively browse movies. If they want to browse, an algorithm probably won't be able to help them decide. Additionally, this serves as an incentive for them to rate additional movies for better recommendations.
+
+# Implementation 
 ```{r system2, eval = TRUE}
 
 # Import ratings matrix: Use Rmat, since rows are userIDs, columns are movieIDs, and values are ratings
@@ -282,7 +285,8 @@ write.csv(S, file = "S.csv")
 
 # SII.3.c.  display pairwise similarity values from S for specified movies
 display_movies = c('m1','m10','m100','m1510','m260','m3212')
-sim_matrix[display_movies, display_movies]
+exibit_a = sim_matrix[display_movies, display_movies]
+print(exibit_a)
 
 # SII.4. Create myIBCF
 
